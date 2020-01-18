@@ -1811,6 +1811,48 @@ const WMS_CSS = `body {
     font-size: 20px;
 }`;
 
+const SFC = `// This example illustrates how Owl enables single file components,
+// which includes code, template and style.
+//
+// This is very useful in some situations, such as testing or quick prototyping.
+// Note that this example has no xml or css.
+
+const { Component, useState, tags } = owl;
+const { xml, css } = tags;
+
+// Counter component
+const COUNTER_TEMPLATE = xml\`
+  <button t-on-click="state.value++">
+    Click! [<t t-esc="state.value"/>]
+  </button>\`;
+
+const COUNTER_STYLE = css\`
+  button {
+    color: blue;
+  }\`;
+
+class Counter extends Component {
+  state = useState({ value: 0})
+}
+Counter.template = COUNTER_TEMPLATE;
+Counter.style = COUNTER_STYLE;
+
+// App
+const APP_TEMPLATE = xml\`
+  <div>
+    <Counter/>
+    <Counter/>
+  </div>\`;
+
+class App extends Component {}
+App.template = APP_TEMPLATE;
+App.components = { Counter };
+
+// Application setup
+const app = new App();
+app.mount(document.body);
+`;
+
 export const SAMPLES = [
   {
     description: "Components",
@@ -1822,6 +1864,10 @@ export const SAMPLES = [
     description: "Form Input Bindings",
     code: FORM,
     xml: FORM_XML
+  },
+  {
+    description: "Single File Components",
+    code: SFC
   },
   {
     description: "Animations",
