@@ -15,6 +15,7 @@ yarn-debug.log*
 yarn-error.log*
 
 package-lock.json
+yarn.lock
 
 #ide's
 .vscode
@@ -24,3 +25,5 @@ node_modules
 
 # Extras temp file
 /tools/owl.js
+
+release-notes.md

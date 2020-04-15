@@ -51,6 +51,16 @@ describe("static templates", () => {
     expect(renderToString(qweb, "test")).toBe(`<div class="abc">word</div>`);
   });
 
+  test("div with a class attribute with a quote", () => {
+    qweb.addTemplate("test", `<div class="a'bc">word</div>`);
+    expect(renderToString(qweb, "test")).toBe(`<div class="a'bc">word</div>`);
+  });
+
+  test("div with an arbitrary attribute with a quote", () => {
+    qweb.addTemplate("test", `<div abc="a'bc">word</div>`);
+    expect(renderToString(qweb, "test")).toBe(`<div abc="a'bc">word</div>`);
+  });
+
   test("div with a empty class attribute", () => {
     qweb.addTemplate("test", `<div class="">word</div>`);
     expect(renderToString(qweb, "test")).toBe(`<div>word</div>`);
@@ -64,6 +74,19 @@ describe("static templates", () => {
   test("properly handle comments", () => {
     qweb.addTemplate("test", "<div>hello <!-- comment-->owl</div>");
     expect(renderToString(qweb, "test")).toBe("<div>hello <!-- comment-->owl</div>");
+  });
+
+  test("properly handle comments between t-if/t-else", () => {
+    qweb.addTemplate(
+      "test",
+      `
+      <div>
+        <span t-if="true">true</span>
+        <!-- comment-->
+        <span t-else="">owl</span>
+      </div>`
+    );
+    expect(renderToString(qweb, "test")).toBe("<div><span>true</span></div>");
   });
 });
 
@@ -921,6 +944,38 @@ describe("t-call (template calling", () => {
     expect(recursiveFn.toString()).toMatchSnapshot();
   });
 
+  test("recursive template, part 4: with t-set recursive index", () => {
+    qweb.addTemplates(`
+        <templates>
+            <div t-name="Parent">
+                <t t-call="nodeTemplate">
+                    <t t-set="recursive_idx" t-value="1"/>
+                    <t t-set="node" t-value="root"/>
+                </t>
+            </div>
+            <div t-name="nodeTemplate">
+                <t t-set="recursive_idx" t-value="recursive_idx + 1"/>
+                <p><t t-esc="node.val"/> <t t-esc="recursive_idx"/></p>
+                <t t-foreach="node.children or []" t-as="subtree">
+                    <t t-call="nodeTemplate">
+                        <t t-set="node" t-value="subtree"/>
+                    </t>
+                </t>
+            </div>
+
+        </templates>
+    `);
+    const root = {
+      val: "a",
+      children: [{ val: "b", children: [{ val: "c", children: [{ val: "d" }] }] }]
+    };
+    const expected =
+      "<div><div><p>a 2</p><div><p>b 3</p><div><p>c 4</p><div><p>d 5</p></div></div></div></div></div>";
+    expect(renderToString(qweb, "Parent", { root })).toBe(expected);
+    const recursiveFn = Object.values(qweb.subTemplates)[0] as any;
+    expect(recursiveFn.toString()).toMatchSnapshot();
+  });
+
   test("t-call, global templates", () => {
     QWeb.registerTemplate("abcd", '<div><t t-call="john"/></div>');
     qweb.addTemplate("john", `<span>desk</span>`);
@@ -1603,6 +1658,31 @@ describe("t-on", () => {
     node.querySelector("button")!.click();
 
     expect(steps).toEqual(["onClick"]);
+  });
+
+  test("t-on with .capture modifier", () => {
+    expect.assertions(2);
+    qweb.addTemplate(
+      "test",
+      `<div t-on-click.capture="onCapture">
+        <button t-on-click="doSomething">Button</button>
+      </div>`
+    );
+
+    const steps: string[] = [];
+    const owner = {
+      onCapture() {
+        steps.push("captured");
+      },
+      doSomething() {
+        steps.push("normal");
+      }
+    };
+    const node = renderToDOM(qweb, "test", owner, { handlers: [] });
+
+    const button = (<HTMLElement>node).getElementsByTagName("button")[0];
+    button.click();
+    expect(steps).toEqual(["captured", "normal"]);
   });
 });
 

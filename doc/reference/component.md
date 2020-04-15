@@ -12,12 +12,9 @@
   - [Lifecycle](#lifecycle)
   - [Root Component](#root-component)
   - [Composition](#composition)
-  - [Event Handling](#event-handling)
   - [Form Input Bindings](#form-input-bindings)
   - [References](#references)
-  - [Slots](#slots)
   - [Dynamic sub components](#dynamic-sub-components)
-  - [Error Handling](#error-handling)
   - [Functional Components](#functional-components)
   - [SVG components](#svg-components)
 
@@ -308,16 +305,16 @@ A solid and robust component system needs useful hooks/methods to help
 developers write components. Here is a complete description of the lifecycle of
 a owl component:
 
-| Method                                           | Description                                                  |
-| ------------------------------------------------ | ------------------------------------------------------------ |
-| **[constructor](#constructorparent-props)**      | constructor                                                  |
-| **[willStart](#willstart)**                      | async, before first rendering                                |
-| **[mounted](#mounted)**                          | just after component is rendered and added to the DOM        |
-| **[willUpdateProps](#willupdatepropsnextprops)** | async, before props update                                   |
-| **[willPatch](#willpatch)**                      | just before the DOM is patched                               |
-| **[patched](#patchedsnapshot)**                  | just after the DOM is patched                                |
-| **[willUnmount](#willunmount)**                  | just before removing component from DOM                      |
-| **[catchError](#catcherrorerror)**               | catch errors (see [error handling section](#error-handling)) |
+| Method                                           | Description                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| **[constructor](#constructorparent-props)**      | constructor                                                 |
+| **[willStart](#willstart)**                      | async, before first rendering                               |
+| **[mounted](#mounted)**                          | just after component is rendered and added to the DOM       |
+| **[willUpdateProps](#willupdatepropsnextprops)** | async, before props update                                  |
+| **[willPatch](#willpatch)**                      | just before the DOM is patched                              |
+| **[patched](#patchedsnapshot)**                  | just after the DOM is patched                               |
+| **[willUnmount](#willunmount)**                  | just before removing component from DOM                     |
+| **[catchError](#catcherrorerror)**               | catch errors (see [error handling page](error_handling.md)) |
 
 Notes:
 
@@ -452,8 +449,8 @@ This is the opposite method of `mounted`.
 #### `catchError(error)`
 
 The `catchError` method is useful when we need to intercept and properly react
-to (rendering) errors that occur in some sub components. See the section on
-[error handling](#error-handling).
+to (rendering) errors that occur in some sub components. See the page on
+[error handling](error_handling.md).
 
 ### Root Component
 
@@ -551,128 +548,6 @@ with a class object:
 ```xml
 <MyComponent t-att-class="{a: state.flagA, b: state.flagB}" />
 ```
-
-### Event Handling
-
-In a component's template, it is useful to be able to register handlers on DOM
-elements to some specific events. This is what makes a template _alive_. There
-are four different use cases.
-
-1. Register an event handler on a DOM node (_pure_ DOM event)
-2. Register an event handler on a component (_pure_ DOM event)
-3. Register an event handler on a DOM node (_business_ DOM event)
-4. Register an event handler on a component (_business_ DOM event)
-
-A _pure_ DOM event is directly triggered by a user interaction (e.g. a `click`).
-
-```xml
-<button t-on-click="someMethod">Do something</button>
-```
-
-This will be roughly translated in javascript like this:
-
-```js
-button.addEventListener("click", component.someMethod.bind(component));
-```
-
-The suffix (`click` in this example) is simply the name of the actual DOM
-event.
-
-A _business_ DOM event is triggered by a call to `trigger` on a component.
-
-```xml
-<MyComponent t-on-menu-loaded="someMethod" />
-```
-
-```js
- class MyComponent {
-     someWhere() {
-         const payload = ...;
-         this.trigger('menu-loaded', payload);
-     }
- }
-```
-
-The call to `trigger` generates an `OwlEvent`, a subclass of [_CustomEvent_](https://developer.mozilla.org/docs/Web/Guide/Events/Creating_and_triggering_events)
-with an additional attribute `originalComponent` (the component that triggered
-the event). The generated event is of type `menu-loaded` and dispatches it on
-the component's DOM element (`this.el`). The event bubbles and is cancelable.
-The parent component listening to event `menu-loaded` will receive the payload
-in its `someMethod` handler (in the `detail` property of the event), whenever
-the event is triggered.
-
-```js
- class ParentComponent {
-     someMethod(ev) {
-         const payload = ev.detail;
-         ...
-     }
- }
-```
-
-By convention, we use KebabCase for the name of _business_ events.
-
-The `t-on` directive allows to prebind its arguments. For example,
-
-```xml
-<button t-on-click="someMethod(expr)">Do something</button>
-```
-
-Here, `expr` is a valid Owl expression, so it could be `true` or some variable
-from the rendering context.
-
-One can also directly specify inline statements. For example,
-
-```xml
-<button t-on-click="state.counter++">Increment counter</button>
-```
-
-Here, `state` must be defined in the rendering context (typically the component)
-as it will be translated to:
-
-```js
-button.addEventListener("click", () => {
-  context.state.counter++;
-});
-```
-
-Warning: inline expressions are evaluated in the context of the template. This
-means that they can access the component methods and properties. But if they set
-a key, the inline statement will actually not modify the component, but a key in
-a sub scope.
-
-```xml
-<button t-on-click="value = 1">Set value to 1 (does not work!!!)</button>
-<button t-on-click="state.value = 1">Set state.value to 1 (work as expected)</button>
-```
-
-In order to remove the DOM event details from the event handlers (like calls to
-`event.preventDefault`) and let them focus on data logic, _modifiers_ can be
-specified as additional suffixes of the `t-on` directive.
-
-| Modifier   | Description                                                       |
-| ---------- | ----------------------------------------------------------------- |
-| `.stop`    | calls `event.stopPropagation()` before calling the method         |
-| `.prevent` | calls `event.preventDefault()` before calling the method          |
-| `.self`    | calls the method only if the `event.target` is the element itself |
-
-```xml
-<button t-on-click.stop="someMethod">Do something</button>
-```
-
-Note that modifiers can be combined (ex: `t-on-click.stop.prevent`), and that
-the order may matter. For instance `t-on-click.prevent.self` will prevent all
-clicks while `t-on-click.self.prevent` will only prevent clicks on the element
-itself.
-
-Finally, empty handlers are tolerated as they could be defined only to apply
-modifiers. For example,
-
-```xml
-<button t-on-click.stop="">Do something</button>
-```
-
-This will simply stop the propagation of the event.
 
 ### Form Input Bindings
 
@@ -823,75 +698,6 @@ Note that these two examples uses the suffix `ref` to name the reference. This
 is not mandatory, but it is a useful convention, so we do not forget to access
 it with the `el` or `comp` suffix.
 
-### Slots
-
-To make generic components, it is useful to be able for a parent component to _inject_
-some sub template, but still be the owner. For example, a generic dialog component
-will need to render some content, some footer, but with the parent as the
-rendering context.
-
-This is what _slots_ are for.
-
-```xml
-<div t-name="Dialog" class="modal">
-  <div class="modal-title"><t t-esc="props.title"/></div>
-  <div class="modal-content">
-    <t t-slot="content"/>
-  </div>
-  <div class="modal-footer">
-    <t t-slot="footer"/>
-  </div>
-</div>
-```
-
-Slots are defined by the caller, with the `t-set` directive:
-
-```xml
-<div t-name="SomeComponent">
-  <div>some component</div>
-  <Dialog title="Some Dialog">
-    <t t-set="content">
-      <div>hey</div>
-    </t>
-    <t t-set="footer">
-      <button t-on-click="doSomething">ok</button>
-    </t>
-  </Dialog>
-</div>
-```
-
-In this example, the component `Dialog` will render the slots `content` and `footer`
-with its parent as rendering context. This means that clicking on the button
-will execute the `doSomething` method on the parent, not on the dialog.
-
-Default slot: the first element inside the component which is not a named slot will
-be considered the `default` slot. For example:
-
-```xml
-<div t-name="Parent">
-  <Child>
-    <span>some content</span>
-  </Child>
-</div>
-
-<div t-name="Child">
-  <t t-slot="default"/>
-</div>
-```
-
-Slots can define a default content, in case the parent did not define them:
-
-```xml
-<div t-name="Parent">
-  <Child/>
-</div>
-
-<span t-name="Child">
-  <t t-slot="default">default content</t>
-</span>
-<!-- will be rendered as: <div><span>default content</span></div> -->
-```
-
 ### Dynamic sub components
 
 It is not common, but sometimes we need a dynamic component name. In this case,
@@ -936,65 +742,6 @@ In this example, the component `App` selects dynamically the concrete sub
 component class.
 
 Note that the `t-component` directive can only be used on `<t>` nodes.
-
-### Error Handling
-
-By default, whenever an error occurs in the rendering of an Owl application, we
-destroy the whole application. Otherwise, we cannot offer any guarantee on the
-state of the resulting component tree. It might be hopelessly corrupted, but
-without any user-visible state.
-
-Clearly, it sometimes is a little bit extreme to destroy the application. This
-is why we have a builtin mechanism to handle rendering errors (and errors coming
-from lifecycle hooks): the `catchError` hook.
-
-Whenever the `catchError` lifecycle hook is implemented, all errors coming from
-sub components rendering and/or lifecycle method calls will be caught and given
-to the `catchError` method. This allows us to properly handle the error, and to
-not break the application.
-
-For example, here is how we could implement an `ErrorBoundary` component:
-
-```xml
-<div t-name="ErrorBoundary">
-    <t t-if="state.error">
-        Error handled
-    </t>
-    <t t-else="">
-        <t t-slot="default" />
-    </t>
-</div>
-```
-
-```js
-class ErrorBoundary extends Component {
-  state = useState({ error: false });
-
-  catchError() {
-    this.state.error = true;
-  }
-}
-```
-
-Using the `ErrorBoundary` is then extremely simple:
-
-```xml
-<ErrorBoundary><SomeOtherComponent/></ErrorBoundary>
-```
-
-Note that we need to be careful here: the fallback UI should not throw any
-error, otherwise we risk going into an infinite loop.
-
-Also, it may be useful to know that whenever an error is caught, it is then
-broadcasted to the application by an event on the `qweb` instance. It may be
-useful, for example, to log the error somewhere.
-
-```js
-env.qweb.on("error", null, function(error) {
-  // do something
-  // react to the error
-});
-```
 
 ### Functional Components
 

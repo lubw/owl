@@ -133,7 +133,11 @@ const UTILS: Utils = {
   },
   getScope(obj, property: string) {
     const obj0 = obj;
-    while (obj && !obj.hasOwnProperty(property)) {
+    while (
+      obj &&
+      !obj.hasOwnProperty(property) &&
+      !(obj.hasOwnProperty("__access_mode__") && obj.__access_mode__ === "ro")
+    ) {
       const newObj = obj.__proto__;
       if (!newObj || isComponent(newObj)) {
         return obj0;
@@ -172,6 +176,10 @@ function parseXML(xml: string): Document {
     throw new Error(msg);
   }
   return doc;
+}
+
+function escapeQuotes(str: string): string {
+  return str.replace(/\'/g, "\\'");
 }
 
 //------------------------------------------------------------------------------
@@ -328,10 +336,11 @@ export class QWeb extends EventBus {
         ) {
           throw new Error("Only one conditional branching directive is allowed per node");
         }
-        // All text nodes between branch nodes are removed
+        // All text (with only spaces) and comment nodes (nodeType 8) between
+        // branch nodes are removed
         let textNode;
         while ((textNode = node.previousSibling) !== prevElem) {
-          if (textNode.nodeValue.trim().length) {
+          if (textNode.nodeValue.trim().length && textNode.nodeType !== 8) {
             throw new Error("text is not allowed between branching directives");
           }
           textNode.remove();
@@ -693,13 +702,13 @@ export class QWeb extends EventBus {
           if ((value = value.trim())) {
             let classDef = value
               .split(/\s+/)
-              .map(a => `'${a}':true`)
+              .map(a => `'${escapeQuotes(a)}':true`)
               .join(",");
             classObj = `_${ctx.generateID()}`;
             ctx.addLine(`let ${classObj} = {${classDef}};`);
           }
         } else {
-          ctx.addLine(`let _${attID} = '${value}';`);
+          ctx.addLine(`let _${attID} = '${escapeQuotes(value)}';`);
           if (!name.match(/^[a-zA-Z]+$/)) {
             // attribute contains 'non letters' => we want to quote it
             name = '"' + name + '"';

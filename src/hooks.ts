@@ -22,7 +22,7 @@ import { Observer } from "./core/observer";
  * trigger a rerendering of the current component.
  */
 export function useState<T>(state: T): T {
-  const component: Component<any, any> = Component.current!;
+  const component: Component = Component.current!;
   const __owl__ = component.__owl__;
   if (!__owl__.observer) {
     __owl__.observer = new Observer();
@@ -37,7 +37,7 @@ export function useState<T>(state: T): T {
 function makeLifecycleHook(method: string, reverse: boolean = false) {
   if (reverse) {
     return function(cb) {
-      const component: Component<any, any> = Component.current!;
+      const component: Component = Component.current!;
       if (component.__owl__[method]) {
         const current = component.__owl__[method];
         component.__owl__[method] = function() {
@@ -50,7 +50,7 @@ function makeLifecycleHook(method: string, reverse: boolean = false) {
     };
   } else {
     return function(cb) {
-      const component: Component<any, any> = Component.current!;
+      const component: Component = Component.current!;
       if (component.__owl__[method]) {
         const current = component.__owl__[method];
         component.__owl__[method] = function() {
@@ -66,11 +66,11 @@ function makeLifecycleHook(method: string, reverse: boolean = false) {
 
 function makeAsyncHook(method: string) {
   return function(cb) {
-    const component: Component<any, any> = Component.current!;
+    const component: Component = Component.current!;
     if (component.__owl__[method]) {
       const current = component.__owl__[method];
       component.__owl__[method] = function(...args) {
-        return Promise.all[(current.call(component, ...args), cb.call(component, ...args))];
+        return Promise.all([current.call(component, ...args), cb.call(component, ...args)]);
       };
     } else {
       component.__owl__[method] = cb;
@@ -96,7 +96,7 @@ export const onWillUpdateProps = makeAsyncHook("willUpdatePropsCB");
  */
 interface Ref {
   el: HTMLElement | null;
-  comp: Component<any, any> | null;
+  comp: Component | null;
 }
 
 export function useRef(name: string): Ref {
@@ -111,7 +111,7 @@ export function useRef(name: string): Ref {
       }
       return null;
     },
-    get comp(): Component<any, any> | null {
+    get comp(): Component | null {
       const val = __owl__.refs && __owl__.refs[name];
       return val instanceof Component ? val : null;
     }
@@ -149,7 +149,12 @@ export function useSubEnv(nextEnv) {
  *  in the constructor of the OWL component that needs to be notified,
  *  `useExternalListener(window, 'click', this._doSomething);`
  * */
-export function useExternalListener(target: HTMLElement, eventName: string, handler, eventParams?) {
+export function useExternalListener(
+  target: HTMLElement | typeof window,
+  eventName: string,
+  handler,
+  eventParams?
+) {
   const boundHandler = handler.bind(Component.current);
 
   onMounted(() => target.addEventListener(eventName, boundHandler, eventParams));

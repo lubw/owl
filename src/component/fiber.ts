@@ -1,5 +1,5 @@
 import { h, VNode } from "../vdom/index";
-import { Component } from "./component";
+import { Component, MountPosition } from "./component";
 import { scheduler } from "./scheduler";
 
 /**
@@ -46,11 +46,12 @@ export class Fiber {
   // scheduler.
   counter: number = 0;
 
-  inserter: (el: HTMLElement) => void | null;
+  target: HTMLElement | DocumentFragment | null;
+  position: MountPosition | null;
 
   scope: any;
 
-  component: Component<any, any>;
+  component: Component;
   vnode: VNode | null = null;
 
   root: Fiber;
@@ -61,10 +62,17 @@ export class Fiber {
 
   error?: Error;
 
-  constructor(parent: Fiber | null, component: Component<any, any>, force, inserter) {
+  constructor(
+    parent: Fiber | null,
+    component: Component,
+    force: boolean,
+    target: HTMLElement | DocumentFragment | null,
+    position: MountPosition | null
+  ) {
     this.component = component;
     this.force = force;
-    this.inserter = inserter;
+    this.target = target;
+    this.position = position;
 
     const __owl__ = component.__owl__;
     this.scope = __owl__.scope;
@@ -179,7 +187,7 @@ export class Fiber {
   complete() {
     let component = this.component;
     this.isCompleted = true;
-    if (!this.inserter && !component.__owl__.isMounted) {
+    if (!this.target && !component.__owl__.isMounted) {
       return;
     }
 
@@ -208,17 +216,47 @@ export class Fiber {
     for (let i = patchLen - 1; i >= 0; i--) {
       const fiber = patchQueue[i];
       component = fiber.component;
-      component.__patch(fiber.vnode!);
-      if (!fiber.shouldPatch && (!fiber.inserter || i !== 0)) {
-        component.__owl__.pvnode!.elm = component.__owl__.vnode!.elm;
+      if (fiber.target && i === 0) {
+        let target;
+        if (fiber.position === "self") {
+          target = fiber.target;
+          if ((target as HTMLElement).tagName.toLowerCase() !== fiber.vnode!.sel) {
+            throw new Error(
+              `Cannot attach '${component.constructor.name}' to target node (not same tag name)`
+            );
+          }
+          // In self mode, we *know* we are to take possession of the target
+          // Hence we manually create the corresponding VNode and copy the "key" in data
+          const selfVnodeData = fiber.vnode!.data ? { key: fiber.vnode!.data.key } : {};
+          const selfVnode = h(fiber.vnode!.sel, selfVnodeData);
+          selfVnode.elm = target;
+          target = selfVnode;
+        } else {
+          target = component.__owl__.vnode || document.createElement(fiber.vnode!.sel!);
+        }
+        component.__patch(target!, fiber.vnode!);
+      } else {
+        if (fiber.shouldPatch) {
+          component.__patch(component.__owl__.vnode!, fiber.vnode!);
+        } else {
+          component.__patch(document.createElement(fiber.vnode!.sel!), fiber.vnode!);
+          component.__owl__.pvnode!.elm = component.__owl__.vnode!.elm;
+        }
       }
       component.__owl__.currentFiber = null;
     }
 
     // insert into the DOM (mount case)
     let inDOM = false;
-    if (this.inserter) {
-      this.inserter(this.component.el!);
+    if (this.target) {
+      switch (this.position) {
+        case "first-child":
+          this.target.prepend(this.component.el!);
+          break;
+        case "last-child":
+          this.target.appendChild(this.component.el!);
+          break;
+      }
       inDOM = document.body.contains(this.component.el);
       this.component.env.qweb.trigger("dom-appended");
     }
@@ -227,12 +265,12 @@ export class Fiber {
     for (let i = patchLen - 1; i >= 0; i--) {
       const fiber = patchQueue[i];
       component = fiber.component;
-      if (fiber.shouldPatch && !this.inserter) {
+      if (fiber.shouldPatch && !this.target) {
         component.patched();
         if (component.__owl__.patchedCB) {
           component.__owl__.patchedCB();
         }
-      } else if (this.inserter ? inDOM : true) {
+      } else if (this.target ? inDOM : true) {
         component.__callMounted();
       }
     }

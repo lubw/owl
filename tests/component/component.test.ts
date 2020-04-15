@@ -37,16 +37,16 @@ afterEach(() => {
   fixture.remove();
 });
 
-function children(w: Component<any, any>): Component<any, any>[] {
+function children(w: Component): Component[] {
   const childrenMap = w.__owl__.children;
   return Object.keys(childrenMap).map(id => childrenMap[id]);
 }
 
 // Test components
 
-class WidgetB extends Component<any, any> {}
+class WidgetB extends Component {}
 
-class WidgetA extends Component<any, any> {
+class WidgetA extends Component {
   static components = { b: WidgetB };
 }
 
@@ -56,17 +56,17 @@ class WidgetA extends Component<any, any> {
 
 describe("basic widget properties", () => {
   test("props is set on root components", async () => {
-    const widget = new Component<any, any>(null, {});
+    const widget = new Component(null, {});
     expect(widget.props).toEqual({});
   });
 
   test("has no el after creation", async () => {
-    const widget = new Component<any, any>();
+    const widget = new Component();
     expect(widget.el).toBe(null);
   });
 
   test("can be mounted", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`<div>content</div>`;
     }
     const widget = new SomeWidget();
@@ -76,7 +76,7 @@ describe("basic widget properties", () => {
   });
 
   test("can be mounted on a documentFragment", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`<div>content</div>`;
     }
     const widget = new SomeWidget();
@@ -87,7 +87,7 @@ describe("basic widget properties", () => {
   });
 
   test("display a nice message if mounted on a non existing node", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`<div>content</div>`;
     }
     const widget = new SomeWidget();
@@ -104,7 +104,7 @@ describe("basic widget properties", () => {
   });
 
   test("display an error message if result of rendering is empty", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`<t/>`;
     }
     const widget = new SomeWidget();
@@ -120,7 +120,7 @@ describe("basic widget properties", () => {
 
   test("crashes if it cannot find a template", async () => {
     expect.assertions(1);
-    class SomeWidget extends Component<any, any> {}
+    class SomeWidget extends Component {}
     try {
       new SomeWidget();
     } catch (e) {
@@ -129,7 +129,7 @@ describe("basic widget properties", () => {
   });
 
   test("can be clicked on and updated", async () => {
-    class Counter extends Component<any, any> {
+    class Counter extends Component {
       static template = xml`
       <div><t t-esc="state.counter"/><button t-on-click="state.counter++">Inc</button></div>`;
       state = useState({
@@ -148,10 +148,10 @@ describe("basic widget properties", () => {
   });
 
   test("can handle empty props", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span><t t-esc="props.val"/></span>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child val=""/></div>`;
       static components = { Child };
     }
@@ -163,7 +163,7 @@ describe("basic widget properties", () => {
   });
 
   test("cannot be clicked on and updated if not in DOM", async () => {
-    class Counter extends Component<any, any> {
+    class Counter extends Component {
       static template = xml`
       <div><t t-esc="state.counter"/><button t-on-click="state.counter++">Inc</button></div>`;
       state = useState({
@@ -183,7 +183,7 @@ describe("basic widget properties", () => {
   });
 
   test("widget style and classname", async () => {
-    class StyledWidget extends Component<any, any> {
+    class StyledWidget extends Component {
       static template = xml`
         <div style="font-weight:bold;" class="some-class">world</div>
       `;
@@ -195,7 +195,7 @@ describe("basic widget properties", () => {
 
   test("changing state before first render does not trigger a render", async () => {
     const steps: string[] = [];
-    class TestW extends Component<any, any> {
+    class TestW extends Component {
       static template = xml`<div/>`;
       state = useState({ drinks: 1 });
       async willStart() {
@@ -219,7 +219,7 @@ describe("basic widget properties", () => {
 
   test("changing state before first render does not trigger a render (with parent)", async () => {
     const steps: string[] = [];
-    class TestW extends Component<any, any> {
+    class TestW extends Component {
       static template = xml`<span>W</span>`;
       state = useState({ drinks: 1 });
       async willStart() {
@@ -236,7 +236,7 @@ describe("basic widget properties", () => {
         steps.push("patched");
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       state = useState({ flag: false });
       static components = { TestW };
       static template = xml`<div><TestW t-if="state.flag"/></div>`;
@@ -254,7 +254,7 @@ describe("basic widget properties", () => {
   });
 
   test("render method wait until rendering is done", async () => {
-    class TestW extends Component<any, any> {
+    class TestW extends Component {
       static template = xml`<div><t t-esc="state.drinks"/></div>`;
       state = { drinks: 1 };
     }
@@ -271,12 +271,12 @@ describe("basic widget properties", () => {
   });
 
   test("keeps a reference to env", async () => {
-    const widget = new Component<any, any>();
+    const widget = new Component();
     expect(widget.env).toBe(env);
   });
 
   test("do not remove previously rendered dom if not necessary", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`<div/>`;
     }
     const widget = new SomeComponent();
@@ -291,11 +291,11 @@ describe("basic widget properties", () => {
   test("reconciliation alg is not confused in some specific situation", async () => {
     // in this test, we set t-key to 4 because it was in conflict with the
     // template id corresponding to the first child.
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span>child</span>`;
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
             <Child />
@@ -313,11 +313,11 @@ describe("basic widget properties", () => {
   test("reconciliation alg works for t-foreach in t-foreach", async () => {
     const warn = console.warn;
     console.warn = () => {};
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div><t t-esc="props.blip"/></div>`;
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
             <t t-foreach="state.s" t-as="section">
@@ -338,11 +338,11 @@ describe("basic widget properties", () => {
   });
 
   test("reconciliation alg works for t-foreach in t-foreach, 2", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div><t t-esc="props.row + '_' + props.col"/></div>`;
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
           <p t-foreach="state.rows" t-as="row" t-key="row">
@@ -368,11 +368,11 @@ describe("basic widget properties", () => {
   });
 
   test("same t-keys in two different places", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span><t t-esc="props.blip"/></span>`;
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
             <div><Child t-key="1" blip="'1'"/></div>
@@ -388,11 +388,11 @@ describe("basic widget properties", () => {
   });
 
   test("t-key on a component with t-if, and a sibling component", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span>child</span>`;
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
           <Child t-if="false" t-key="'str'"/>
@@ -408,78 +408,10 @@ describe("basic widget properties", () => {
   });
 });
 
-describe("mount targets", () => {
-  test("can attach a component to an existing node (if same tagname)", async () => {
-    class App extends Component<any, any> {
-      static template = xml`<div>app</div>`;
-    }
-    const div = document.createElement("div");
-    fixture.appendChild(div);
-
-    const app = new App();
-    await app.mount(div, { position: "self" });
-    expect(fixture.innerHTML).toBe("<div>app</div>");
-  });
-
-  test("cannot attach a component to an existing node (if not same tagname)", async () => {
-    class App extends Component<any, any> {
-      static template = xml`<span>app</span>`;
-    }
-    const div = document.createElement("div");
-    fixture.appendChild(div);
-
-    const app = new App();
-    let error;
-    try {
-      await app.mount(div, { position: "self" });
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("Cannot attach 'App' to target node (not same tag name)");
-  });
-
-  test("can mount a component (with position='first-child')", async () => {
-    class App extends Component<any, any> {
-      static template = xml`<div>app</div>`;
-    }
-    const span = document.createElement("span");
-    fixture.appendChild(span);
-
-    const app = new App();
-    await app.mount(fixture, { position: "first-child" });
-    expect(fixture.innerHTML).toBe("<div>app</div><span></span>");
-  });
-
-  test("can mount a component (with position='last-child')", async () => {
-    class App extends Component<any, any> {
-      static template = xml`<div>app</div>`;
-    }
-    const span = document.createElement("span");
-    fixture.appendChild(span);
-
-    const app = new App();
-    await app.mount(fixture, { position: "last-child" });
-    expect(fixture.innerHTML).toBe("<span></span><div>app</div>");
-  });
-
-  test("default mount option is 'last-child'", async () => {
-    class App extends Component<any, any> {
-      static template = xml`<div>app</div>`;
-    }
-    const span = document.createElement("span");
-    fixture.appendChild(span);
-
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<span></span><div>app</div>");
-  });
-});
-
 describe("lifecycle hooks", () => {
   test("willStart hook is called", async () => {
     let willstart = false;
-    class HookWidget extends Component<any, any> {
+    class HookWidget extends Component {
       static template = xml`<div/>`;
       async willStart() {
         willstart = true;
@@ -492,7 +424,7 @@ describe("lifecycle hooks", () => {
 
   test("mounted hook is not called if not in DOM", async () => {
     let mounted = false;
-    class HookWidget extends Component<any, any> {
+    class HookWidget extends Component {
       static template = xml`<div/>`;
       async mounted() {
         mounted = true;
@@ -506,7 +438,7 @@ describe("lifecycle hooks", () => {
 
   test("mounted hook is called if mounted in DOM", async () => {
     let mounted = false;
-    class HookWidget extends Component<any, any> {
+    class HookWidget extends Component {
       static template = xml`<div/>`;
       async mounted() {
         mounted = true;
@@ -519,14 +451,14 @@ describe("lifecycle hooks", () => {
 
   test("willStart hook is called on subwidget", async () => {
     let ok = false;
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div/>`;
       async willStart() {
         ok = true;
       }
     }
 
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`<div><t t-component="child"/></div>`;
       static components = { child: ChildWidget };
     }
@@ -538,7 +470,7 @@ describe("lifecycle hooks", () => {
   test("mounted hook is called on subcomponents, in proper order", async () => {
     const steps: any[] = [];
 
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div/>`;
       mounted() {
         expect(document.body.contains(this.el)).toBe(true);
@@ -546,7 +478,7 @@ describe("lifecycle hooks", () => {
       }
     }
 
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`<div><ChildWidget /></div>`;
       static components = { ChildWidget };
       mounted() {
@@ -561,7 +493,7 @@ describe("lifecycle hooks", () => {
   test("mounted hook is called on subsubcomponents, in proper order", async () => {
     const steps: any[] = [];
 
-    class ChildChildWidget extends Component<any, any> {
+    class ChildChildWidget extends Component {
       static template = xml`<div/>`;
       mounted() {
         steps.push("childchild:mounted");
@@ -571,7 +503,7 @@ describe("lifecycle hooks", () => {
       }
     }
 
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div><t t-component="childchild"/></div>`;
       static components = { childchild: ChildChildWidget };
       mounted() {
@@ -582,7 +514,7 @@ describe("lifecycle hooks", () => {
       }
     }
 
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`<div><t t-if="state.flag"><t t-component="child"/></t></div>`;
       static components = { child: ChildWidget };
       state = useState({ flag: false });
@@ -615,7 +547,7 @@ describe("lifecycle hooks", () => {
     env.qweb.addTemplate("ChildWidget", `<div><t t-component="childchild" n="props.n"/></div>`);
     env.qweb.addTemplate("ChildChildWidget", `<div><t t-esc="props.n"/></div>`);
 
-    class ChildChildWidget extends Component<any, any> {
+    class ChildChildWidget extends Component {
       willPatch() {
         steps.push("childchild:willPatch");
       }
@@ -623,7 +555,7 @@ describe("lifecycle hooks", () => {
         steps.push("childchild:patched");
       }
     }
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static components = { childchild: ChildChildWidget };
       willPatch() {
         steps.push("child:willPatch");
@@ -634,7 +566,7 @@ describe("lifecycle hooks", () => {
     }
 
     env.qweb.addTemplate("ParentWidget", `<div><t t-component="child" n="state.n"/></div>`);
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: ChildWidget };
       state = useState({ n: 1 });
       willPatch() {
@@ -679,7 +611,7 @@ describe("lifecycle hooks", () => {
             </t>
           </div>`
     );
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div/>`;
       async willStart() {
         steps.push("child:willStart");
@@ -688,7 +620,7 @@ describe("lifecycle hooks", () => {
         steps.push("child:mounted");
       }
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       state = useState({ ok: false });
       static components = { child: ChildWidget };
     }
@@ -707,14 +639,14 @@ describe("lifecycle hooks", () => {
     // being visited, so the mount action of the parent could cause a mount
     // action of the new child widget, even though it is not ready yet.
     expect.assertions(1);
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`<div/>`;
       mounted() {
         const child = new ChildWidget(this);
         child.mount(this.el!);
       }
     }
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div/>`;
       mounted() {
         expect(this.el).toBeTruthy();
@@ -728,7 +660,7 @@ describe("lifecycle hooks", () => {
   test("components are unmounted and destroyed if no longer in DOM", async () => {
     let steps: string[] = [];
 
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div/>`;
       constructor(parent) {
         super(parent);
@@ -744,7 +676,7 @@ describe("lifecycle hooks", () => {
         steps.push("willunmount");
       }
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`
         <div>
           <t t-if="state.ok"><ChildWidget /></t>
@@ -765,14 +697,14 @@ describe("lifecycle hooks", () => {
   test("components are unmounted and destroyed if no longer in DOM, even after updateprops", async () => {
     let childUnmounted = false;
 
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<span><t t-esc="props.n"/></span>`;
       willUnmount() {
         childUnmounted = true;
       }
     }
 
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`
         <div>
           <div t-if="state.flag">
@@ -805,7 +737,7 @@ describe("lifecycle hooks", () => {
   test("hooks are called in proper order in widget creation/destruction", async () => {
     let steps: string[] = [];
 
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div/>`;
       constructor(parent) {
         super(parent);
@@ -821,7 +753,7 @@ describe("lifecycle hooks", () => {
         steps.push("c willunmount");
       }
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`<div><t t-component="child"/></div>`;
       static components = { child: ChildWidget };
       constructor(parent?) {
@@ -857,14 +789,14 @@ describe("lifecycle hooks", () => {
   test("willUpdateProps hook is called", async () => {
     let def = makeDeferred();
     env.qweb.addTemplate("Parent", '<span><Child n="state.n"/></span>');
-    class HookWidget extends Component<any, any> {
+    class HookWidget extends Component {
       static template = xml`<span><t t-esc="props.n"/></span>`;
       willUpdateProps(nextProps) {
         expect(nextProps.n).toBe(2);
         return def;
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       state = useState({ n: 1 });
       static components = { Child: HookWidget };
     }
@@ -882,7 +814,7 @@ describe("lifecycle hooks", () => {
   test("patched hook is called after updating State", async () => {
     let n = 0;
 
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       static template = xml`<div/>`;
       state = useState({ a: 1 });
 
@@ -906,13 +838,13 @@ describe("lifecycle hooks", () => {
   test("patched hook is called after updateProps", async () => {
     let n = 0;
 
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       static template = xml`<div/>`;
       patched() {
         n++;
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child a="state.a"/></div>`;
       state = useState({ a: 1 });
       static components = { Child: TestWidget };
@@ -929,13 +861,13 @@ describe("lifecycle hooks", () => {
 
   test("shouldUpdate hook prevent rerendering", async () => {
     let shouldUpdate = false;
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       static template = xml`<div><t t-esc="props.val"/></div>`;
       shouldUpdate() {
         return shouldUpdate;
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child val="state.val"/></div>`;
       static components = { Child: TestWidget };
       state = useState({ val: 42 });
@@ -957,7 +889,7 @@ describe("lifecycle hooks", () => {
     let created = false;
     let mounted = false;
 
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div/>`;
       constructor(parent, props) {
         super(parent, props);
@@ -967,7 +899,7 @@ describe("lifecycle hooks", () => {
         mounted = true;
       }
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`
         <div>
           <t t-if="state.flag">
@@ -992,7 +924,7 @@ describe("lifecycle hooks", () => {
   test("willPatch/patched hook", async () => {
     const steps: string[] = [];
 
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div/>`;
       willPatch() {
         steps.push("child:willPatch");
@@ -1001,7 +933,7 @@ describe("lifecycle hooks", () => {
         steps.push("child:patched");
       }
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`
         <div>
           <t t-component="child" v="state.n"/>
@@ -1035,7 +967,7 @@ describe("lifecycle hooks", () => {
 
 describe("destroy method", () => {
   test("destroy remove the widget from the DOM", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`<div/>`;
     }
 
@@ -1074,7 +1006,7 @@ describe("destroy method", () => {
   test("destroying a widget before willStart is done", async () => {
     let def = makeDeferred();
     let isRendered = false;
-    class DelayedWidget extends Component<any, any> {
+    class DelayedWidget extends Component {
       static template = xml`<div/>`;
       willStart() {
         return def;
@@ -1099,14 +1031,14 @@ describe("destroy method", () => {
   });
 
   test("destroying a widget before being mounted", async () => {
-    class GrandChild extends Component<any, any> {
+    class GrandChild extends Component {
       static template = xml`
         <span>
           <t t-esc="props.val.val"/>
         </span>
       `;
     }
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`
         <span>
           <GrandChild t-if="state.flag" val="something"/>
@@ -1124,7 +1056,7 @@ describe("destroy method", () => {
         return { val: this.state.val };
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div t-on-some-event="doStuff">
           <Child />
@@ -1147,7 +1079,7 @@ describe("destroy method", () => {
 
   test("destroying a widget before being mounted (2)", async () => {
     const steps: string[] = [];
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span></span>`;
       willStart() {
         steps.push("willStart");
@@ -1158,7 +1090,7 @@ describe("destroy method", () => {
         super.__destroy(parent);
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child t-if="state.flag"/></div>`;
       static components = { Child };
       state = useState({ flag: true });
@@ -1185,7 +1117,7 @@ describe("composition", () => {
   test("can use components from the global registry", async () => {
     QWeb.registerComponent("WidgetB", WidgetB);
     env.qweb.addTemplate("ParentWidget", `<div><t t-component="WidgetB"/></div>`);
-    class ParentWidget extends Component<any, any> {}
+    class ParentWidget extends Component {}
     const widget = new ParentWidget();
     await widget.mount(fixture);
     expect(fixture.innerHTML).toBe("<div><div>world</div></div>");
@@ -1193,13 +1125,13 @@ describe("composition", () => {
   });
 
   test("can use dynamic components (the class) if given", async () => {
-    class A extends Component<any, any> {
+    class A extends Component {
       static template = xml`<span>child a</span>`;
     }
-    class B extends Component<any, any> {
+    class B extends Component {
       static template = xml`<span>child b</span>`;
     }
-    class App extends Component<any, any> {
+    class App extends Component {
       static template = xml`<t t-component="myComponent" t-key="state.child"/>`;
       state = useState({
         child: "a"
@@ -1217,13 +1149,13 @@ describe("composition", () => {
   });
 
   test("can use dynamic components (the class) if given (with different root tagname)", async () => {
-    class A extends Component<any, any> {
+    class A extends Component {
       static template = xml`<span>child a</span>`;
     }
-    class B extends Component<any, any> {
+    class B extends Component {
       static template = xml`<div>child b</div>`;
     }
-    class App extends Component<any, any> {
+    class App extends Component {
       static template = xml`<t t-component="myComponent" t-key="state.child"/>`;
       state = useState({
         child: "a"
@@ -1244,8 +1176,8 @@ describe("composition", () => {
     QWeb.registerComponent("WidgetB", WidgetB); // should not use this widget
     env.qweb.addTemplate("ParentWidget", `<div><t t-component="WidgetB"/></div>`);
     env.qweb.addTemplate("AnotherWidgetB", `<span>Belgium</span>`);
-    class AnotherWidgetB extends Component<any, any> {}
-    class ParentWidget extends Component<any, any> {
+    class AnotherWidgetB extends Component {}
+    class ParentWidget extends Component {
       static components = { WidgetB: AnotherWidgetB };
     }
     const widget = new ParentWidget();
@@ -1260,8 +1192,8 @@ describe("composition", () => {
         <div t-name="P"><C a="1"/></div>
         <span t-name="C"><t t-esc="props.a"/></span>
       </templates>`);
-    class C extends Component<any, any> {}
-    class P extends Component<any, any> {
+    class C extends Component {}
+    class P extends Component {
       static components = { C };
     }
     const parent = new P();
@@ -1273,9 +1205,9 @@ describe("composition", () => {
     const consoleError = console.error;
     console.error = jest.fn();
 
-    class SomeComponent extends Component<any, any> {}
+    class SomeComponent extends Component {}
     env.qweb.addTemplate("Parent", `<div><SomeMispelledWidget /></div>`);
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { SomeWidget: SomeComponent };
     }
     const parent = new Parent();
@@ -1292,7 +1224,7 @@ describe("composition", () => {
   });
 
   test("modifying a sub widget", async () => {
-    class Counter extends Component<any, any> {
+    class Counter extends Component {
       static template = xml`
       <div><t t-esc="state.counter"/><button t-on-click="state.counter++">Inc</button></div>`;
       state = useState({
@@ -1301,7 +1233,7 @@ describe("composition", () => {
     }
 
     env.qweb.addTemplate("ParentWidget", `<div><t t-component="Counter"/></div>`);
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { Counter };
     }
     const widget = new ParentWidget();
@@ -1322,10 +1254,10 @@ describe("composition", () => {
         </t>
       </div>`
     );
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`<div/>`;
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { Child: SomeComponent };
       elem1 = useRef("1");
       elem2 = useRef("2");
@@ -1339,6 +1271,35 @@ describe("composition", () => {
     expect(parent.elem2.comp).toBeDefined();
     expect(parent.elem3.comp).toBeDefined();
     expect(parent.elem4.comp).toBeNull();
+  });
+
+  test("t-ref on a node, and t-on-click", async () => {
+    let c;
+    let v = false;
+    class Child extends Component {
+      static template = xml`<div t-ref="nibor">nibor</div>`;
+      nibor = useRef("nibor");
+      mounted() {
+        c = this;
+      }
+    }
+
+    class Parent extends Component {
+      static template = xml`<div><Child t-on-click="doSomething"/></div>`;
+      static components = { Child };
+      doSomething() {
+        v = true;
+      }
+    }
+    const parent = new Parent();
+    await parent.mount(fixture);
+    expect(fixture.innerHTML).toBe("<div><div>nibor</div></div>");
+    expect(c.nibor.el).toBeInstanceOf(HTMLElement);
+    expect(v).toBe(false);
+    c.nibor.el.dispatchEvent(new Event("click"));
+    expect(v).toBe(true);
+    expect(QWeb.TEMPLATES[Child.template].fn.toString()).toMatchSnapshot();
+    expect(QWeb.TEMPLATES[Parent.template].fn.toString()).toMatchSnapshot();
   });
 
   test("parent's elm for a children === children's elm, even after rerender", async () => {
@@ -1362,7 +1323,7 @@ describe("composition", () => {
   });
 
   test("rerendering a widget with a sub widget", async () => {
-    class Counter extends Component<any, any> {
+    class Counter extends Component {
       static template = xml`
       <div><t t-esc="state.counter"/><button t-on-click="state.counter++">Inc</button></div>`;
       state = useState({
@@ -1371,7 +1332,7 @@ describe("composition", () => {
     }
 
     env.qweb.addTemplate("ParentWidget", `<div><t t-component="Counter"/></div>`);
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { Counter };
     }
     const widget = new ParentWidget();
@@ -1385,7 +1346,7 @@ describe("composition", () => {
   });
 
   test("sub components are destroyed if no longer in dom, then recreated", async () => {
-    class Counter extends Component<any, any> {
+    class Counter extends Component {
       static template = xml`
       <div><t t-esc="state.counter"/><button t-on-click="state.counter++">Inc</button></div>`;
       state = useState({
@@ -1394,7 +1355,7 @@ describe("composition", () => {
     }
 
     env.qweb.addTemplate("ParentWidget", `<div><t t-if="state.ok"><Counter /></t></div>`);
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       state = useState({ ok: true });
       static components = { Counter };
     }
@@ -1415,7 +1376,7 @@ describe("composition", () => {
 
   test("sub components rendered in a loop", async () => {
     env.qweb.addTemplate("ChildWidget", `<span><t t-esc="props.n"/></span>`);
-    class ChildWidget extends Component<any, any> {}
+    class ChildWidget extends Component {}
 
     env.qweb.addTemplate(
       "Parent",
@@ -1426,7 +1387,7 @@ describe("composition", () => {
           </t>
         </div>`
     );
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       state = useState({
         numbers: [1, 2, 3]
       });
@@ -1448,7 +1409,7 @@ describe("composition", () => {
   test("sub components with some state rendered in a loop", async () => {
     let n = 1;
     env.qweb.addTemplate("ChildWidget", `<span><t t-esc="state.n"/></span>`);
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       state: any;
       constructor(parent) {
         super(parent);
@@ -1465,7 +1426,7 @@ describe("composition", () => {
           </t>
         </div>`
     );
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = "parent";
       state = useState({
         numbers: [1, 2, 3]
@@ -1489,11 +1450,11 @@ describe("composition", () => {
 
   test("sub components between t-ifs", async () => {
     // this confuses the patching algorithm...
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<span>child</span>`;
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
           <h1 t-if="state.flag">hey</h1>
@@ -1545,8 +1506,8 @@ describe("composition", () => {
             <span t-name="SubWidget">asdf</span>
         </templates>`);
 
-    class SubWidget extends Component<any, any> {}
-    class Parent extends Component<any, any> {
+    class SubWidget extends Component {}
+    class Parent extends Component {
       static components = { SubWidget };
       state = useState({
         blips: [
@@ -1583,8 +1544,8 @@ describe("composition", () => {
             <span t-name="SubWidget">asdf</span>
         </templates>`);
 
-    class SubWidget extends Component<any, any> {}
-    class Parent extends Component<any, any> {
+    class SubWidget extends Component {}
+    class Parent extends Component {
       static components = { SubWidget };
       state = useState({ blips: [{ a: "a", id: 1 }] });
     }
@@ -1595,7 +1556,7 @@ describe("composition", () => {
 
   test("t-component with dynamic value", async () => {
     env.qweb.addTemplate("ParentWidget", `<div><t t-component="{{state.widget}}"/></div>`);
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { WidgetB };
       state = useState({ widget: "WidgetB" });
     }
@@ -1607,7 +1568,7 @@ describe("composition", () => {
 
   test("t-component with dynamic value 2", async () => {
     env.qweb.addTemplate("ParentWidget", `<div><t t-component="Widget{{state.widget}}"/></div>`);
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { WidgetB };
       state = useState({ widget: "B" });
     }
@@ -1618,10 +1579,10 @@ describe("composition", () => {
   });
 
   test("t-component not on a <t> node", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span>1</span>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { Child };
       static template = xml`<div><div t-component="Child"/></div>`;
     }
@@ -1639,7 +1600,7 @@ describe("composition", () => {
   });
 
   test("sub components, loops, and shouldUpdate", async () => {
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<span><t t-esc="props.val"/></span>`;
       shouldUpdate(nextProps) {
         if (nextProps.val === 12) {
@@ -1649,7 +1610,7 @@ describe("composition", () => {
       }
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
           <div>
             <t t-foreach="state.records" t-as="record">
@@ -1681,14 +1642,14 @@ describe("composition", () => {
   });
 
   test("three level of components with collapsing root nodes", async () => {
-    class GrandChild extends Component<any, any> {
+    class GrandChild extends Component {
       static template = xml`<div>2</div>`;
     }
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static components = { GrandChild };
       static template = xml`<GrandChild/>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { Child };
       static template = xml`<Child></Child>`;
     }
@@ -1703,14 +1664,14 @@ describe("composition", () => {
 describe("props evaluation ", () => {
   test("explicit object prop", async () => {
     env.qweb.addTemplate("Parent", `<div><t t-component="child" value="state.val"/></div>`);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       state: { someval: number };
       constructor(parent: Parent, props: { value: number }) {
         super(parent);
         this.state = useState({ someval: props.value });
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { child: Child };
       state = useState({ val: 42 });
     }
@@ -1724,10 +1685,10 @@ describe("props evaluation ", () => {
 
   test("accept ES6-like syntax for props (with getters)", async () => {
     env.qweb.addTemplate("Child", `<span><t t-esc="props.greetings"/></span>`);
-    class Child extends Component<any, any> {}
+    class Child extends Component {}
 
     env.qweb.addTemplate("Parent", `<div><t t-component="child" greetings="greetings"/></div>`);
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { child: Child };
       get greetings() {
         const name = "aaron";
@@ -1740,7 +1701,7 @@ describe("props evaluation ", () => {
   });
 
   test("t-set works ", async () => {
-    class Child extends Component<any, any> {}
+    class Child extends Component {}
     env.qweb.addTemplate(
       "Parent",
       `
@@ -1749,7 +1710,7 @@ describe("props evaluation ", () => {
           <t t-component="child" val="val"/>
         </div>`
     );
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { child: Child };
     }
     env.qweb.addTemplate(
@@ -1766,250 +1727,6 @@ describe("props evaluation ", () => {
   });
 });
 
-describe("class and style attributes with t-component", () => {
-  test("class is properly added on widget root el", async () => {
-    class Child extends Component<any, any> {
-      static template = xml`<div class="c"/>`;
-    }
-    class ParentWidget extends Component<any, any> {
-      static template = xml`<div><Child class="a b"/></div>`;
-      static components = { Child };
-    }
-    const widget = new ParentWidget();
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe(`<div><div class="c a b"></div></div>`);
-  });
-
-  test("empty class attribute is not added on widget root el", async () => {
-    class Child extends Component<any, any> {
-      static template = xml`<span/>`;
-    }
-    class Parent extends Component<any, any> {
-      static template = xml`<div><Child class=""/></div>`;
-      static components = { Child };
-    }
-    const widget = new Parent();
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe(`<div><span></span></div>`);
-  });
-
-  test("t-att-class is properly added/removed on widget root el", async () => {
-    class Child extends Component<any, any> {
-      static template = xml`<div class="c"/>`;
-    }
-    class ParentWidget extends Component<any, any> {
-      static template = xml`<div><Child t-att-class="{a:state.a, b:state.b}"/></div>`;
-      static components = { Child };
-      state = useState({ a: true, b: false });
-    }
-    const widget = new ParentWidget();
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe(`<div><div class="c a"></div></div>`);
-    expect(QWeb.TEMPLATES[ParentWidget.template].fn.toString());
-
-    widget.state.a = false;
-    widget.state.b = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe(`<div><div class="c b"></div></div>`);
-  });
-
-  test("class with extra whitespaces", async () => {
-    env.qweb.addTemplate(
-      "ParentWidget",
-      `<div>
-            <Child class="a  b c   d"/>
-      </div>`
-    );
-    class Child extends Component<any, any> {}
-    class ParentWidget extends Component<any, any> {
-      static components = { Child };
-    }
-    env.qweb.addTemplate("Child", `<div/>`);
-    const widget = new ParentWidget();
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe(`<div><div class="a b c d"></div></div>`);
-  });
-
-  test("t-att-class is properly added/removed on widget root el (v2)", async () => {
-    env.qweb.addTemplates(`
-      <templates>
-        <div t-name="ParentWidget">
-          <Child class="a" t-att-class="{ b: state.b }" t-ref="child"/>
-        </div>
-        <span t-name="Child" class="c" t-att-class="{ d: state.d }"/>
-      </templates>`);
-
-    class Child extends Component<any, any> {
-      state = useState({ d: true });
-    }
-    class ParentWidget extends Component<any, any> {
-      static components = { Child };
-      state = useState({ b: true });
-      child = useRef("child");
-    }
-    const widget = new ParentWidget();
-    await widget.mount(fixture);
-
-    const span = fixture.querySelector("span")!;
-    expect(span.className).toBe("c d a b");
-
-    widget.state.b = false;
-    await nextTick();
-    expect(span.className).toBe("c d a");
-
-    (widget.child.comp as Child).state.d = false;
-    await nextTick();
-    expect(span.className).toBe("c a");
-
-    widget.state.b = true;
-    await nextTick();
-    expect(span.className).toBe("c a b");
-
-    (widget.child.comp as Child).state.d = true;
-    await nextTick();
-    expect(span.className).toBe("c a b d");
-    expect(env.qweb.templates.ParentWidget.fn.toString()).toMatchSnapshot();
-    expect(env.qweb.templates.Child.fn.toString()).toMatchSnapshot();
-  });
-
-  test("t-att-class is properly added/removed on widget root el (v3)", async () => {
-    env.qweb.addTemplates(`
-      <templates>
-        <div t-name="ParentWidget">
-          <Child class="a" t-att-class="state.b ? 'b' : ''" t-ref="child"/>
-        </div>
-        <span t-name="Child" class="c" t-att-class="state.d ? 'd' : ''"/>
-      </templates>`);
-
-    class Child extends Component<any, any> {
-      state = useState({ d: true });
-    }
-    class ParentWidget extends Component<any, any> {
-      static components = { Child };
-      state = useState({ b: true });
-      child = useRef("child");
-    }
-    const widget = new ParentWidget();
-    await widget.mount(fixture);
-
-    const span = fixture.querySelector("span")!;
-    expect(span.className).toBe("c d a b");
-
-    widget.state.b = false;
-    await nextTick();
-    expect(span.className).toBe("c d a");
-
-    (widget.child.comp as Child).state.d = false;
-    await nextTick();
-    expect(span.className).toBe("c a");
-
-    widget.state.b = true;
-    await nextTick();
-    expect(span.className).toBe("c a b");
-
-    (widget.child.comp as Child).state.d = true;
-    await nextTick();
-    expect(span.className).toBe("c a b d");
-    expect(env.qweb.templates.ParentWidget.fn.toString()).toMatchSnapshot();
-    expect(env.qweb.templates.Child.fn.toString()).toMatchSnapshot();
-  });
-
-  test("class on components do not interfere with user defined classes", async () => {
-    env.qweb.addTemplates(`
-      <templates>
-        <div t-name="App" t-att-class="{ c: state.c }" />
-      </templates>`);
-
-    class App extends Component<any, any> {
-      state = useState({ c: true });
-      mounted() {
-        this.el!.classList.add("user");
-      }
-    }
-
-    const widget = new App();
-    await widget.mount(fixture);
-
-    expect(fixture.innerHTML).toBe('<div class="c user"></div>');
-
-    widget.state.c = false;
-    await nextTick();
-
-    expect(fixture.innerHTML).toBe('<div class="user"></div>');
-  });
-
-  test("style is properly added on widget root el", async () => {
-    env.qweb.addTemplate(
-      "ParentWidget",
-      `
-        <div>
-            <t t-component="child" style="font-weight: bold;"/>
-        </div>`
-    );
-
-    class SomeComponent extends Component<any, any> {
-      static template = xml`<div/>`;
-    }
-
-    class ParentWidget extends Component<any, any> {
-      static components = { child: SomeComponent };
-    }
-    const widget = new ParentWidget();
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe(`<div><div style="font-weight: bold;"></div></div>`);
-  });
-
-  test("dynamic t-att-style is properly added and updated on widget root el", async () => {
-    env.qweb.addTemplate(
-      "ParentWidget",
-      `
-        <div>
-            <t t-component="child" t-att-style="state.style"/>
-        </div>`
-    );
-
-    class SomeComponent extends Component<any, any> {
-      static template = xml`<div/>`;
-    }
-
-    class ParentWidget extends Component<any, any> {
-      static components = { child: SomeComponent };
-      state = useState({ style: "font-size: 20px" });
-    }
-    const widget = new ParentWidget();
-    await widget.mount(fixture);
-
-    expect(env.qweb.templates.ParentWidget.fn.toString()).toMatchSnapshot();
-
-    expect(fixture.innerHTML).toBe(`<div><div style="font-size: 20px;"></div></div>`);
-
-    widget.state.style = "font-size: 30px";
-    await nextTick();
-
-    expect(fixture.innerHTML).toBe(`<div><div style="font-size: 30px;"></div></div>`);
-  });
-
-  test("error in subcomponent with class", async () => {
-    class Child extends Component<any, any> {
-      static template = xml`<div t-esc="this.will.crash"/>`;
-    }
-    class ParentWidget extends Component<any, any> {
-      static template = xml`<div><Child class="a"/></div>`;
-      static components = { Child };
-    }
-    const widget = new ParentWidget();
-    let error;
-    try {
-      await widget.mount(fixture);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("Cannot read property 'crash' of undefined");
-    expect(fixture.innerHTML).toBe("");
-  });
-});
-
 describe("other directives with t-component", () => {
   test("t-on works as expected", async () => {
     expect.assertions(4);
@@ -2018,10 +1735,10 @@ describe("other directives with t-component", () => {
         <div t-name="ParentWidget"><t t-component="child" t-on-custom-event="someMethod"/></div>
       </templates>
     `);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div/>`;
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: Child };
       n = 0;
       someMethod(ev) {
@@ -2043,14 +1760,14 @@ describe("other directives with t-component", () => {
   test("t-on works, even if flush is called many times", async () => {
     let flag = false;
     let mounted = false;
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span>child</span>`;
       mounted() {
         mounted = true;
       }
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child t-on-click="doSomething"/></div>`;
       static components = { Child };
 
@@ -2073,11 +1790,11 @@ describe("other directives with t-component", () => {
   });
 
   test("t-on with inline statement", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span>child</span>`;
     }
 
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child t-on-click="state.n = state.n + 1"/></div>`;
       static components = { Child };
       state = { n: 3 };
@@ -2096,10 +1813,10 @@ describe("other directives with t-component", () => {
         <div t-name="ParentWidget"><t t-component="child" t-on-ev="onEv(3)"/></div>
       </templates>
     `);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div/>`;
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: Child };
       onEv(n, ev) {
         expect(n).toBe(3);
@@ -2120,10 +1837,10 @@ describe("other directives with t-component", () => {
         <div t-name="ParentWidget"><t t-component="child" t-on-ev="onEv({val: 3})"/></div>
       </templates>
     `);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div/>`;
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: Child };
       onEv(o, ev) {
         expect(o).toEqual({ val: 3 });
@@ -2144,10 +1861,10 @@ describe("other directives with t-component", () => {
         <div t-name="ParentWidget"><t t-component="child" t-on-ev="onEv({})"/></div>
       </templates>
     `);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div/>`;
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: Child };
       onEv(o, ev) {
         expect(o).toEqual({});
@@ -2168,10 +1885,10 @@ describe("other directives with t-component", () => {
         <div t-name="ParentWidget"><t t-component="child" t-on-ev="onEv({  })"/></div>
       </templates>
     `);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div/>`;
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: Child };
       onEv(o, ev) {
         expect(o).toEqual({});
@@ -2197,10 +1914,10 @@ describe("other directives with t-component", () => {
         </div>
       </templates>
     `);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div/>`;
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: Child };
       onEv1(ev) {
         expect(ev.defaultPrevented).toBe(false);
@@ -2235,13 +1952,13 @@ describe("other directives with t-component", () => {
       </templates>
     `);
     const steps: string[] = [];
-    class GrandChild extends Component<any, any> {
+    class GrandChild extends Component {
       static template = xml`<div/>`;
     }
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static components = { child: GrandChild };
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: Child };
       onEv1(ev) {
         steps.push("onEv1");
@@ -2274,13 +1991,13 @@ describe("other directives with t-component", () => {
       </templates>
     `);
     const steps: boolean[] = [];
-    class GrandChild extends Component<any, any> {
+    class GrandChild extends Component {
       static template = xml`<div/>`;
     }
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static components = { child: GrandChild };
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { child: Child };
       onEv() {}
     }
@@ -2308,14 +2025,14 @@ describe("other directives with t-component", () => {
       </templates>
     `);
     const steps: boolean[] = [];
-    class GrandChild extends Component<any, any> {
+    class GrandChild extends Component {
       static template = xml`<div/>`;
     }
 
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static components = { GrandChild };
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { Child };
       onEv() {}
     }
@@ -2334,10 +2051,10 @@ describe("other directives with t-component", () => {
   });
 
   test("t-on with getter as handler", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span></span>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
           <t t-esc="state.counter"/>
@@ -2363,10 +2080,10 @@ describe("other directives with t-component", () => {
   });
 
   test("t-on with inline statement", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span></span>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
           <t t-esc="state.counter"/>
@@ -2389,14 +2106,14 @@ describe("other directives with t-component", () => {
 
   test("t-on with no handler (only modifiers)", async () => {
     expect.assertions(2);
-    class ComponentB extends Component<any, any> {
+    class ComponentB extends Component {
       static template = xml`<span></span>`;
     }
-    class ComponentA extends Component<any, any> {
+    class ComponentA extends Component {
       static template = xml`<p><ComponentB t-on-ev.prevent=""/></p>`;
       static components = { ComponentB };
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><ComponentA t-on-ev="onEv"/></div>`;
       static components = { ComponentA };
       onEv(ev) {
@@ -2415,7 +2132,7 @@ describe("other directives with t-component", () => {
   test("t-on on nested components with collapsing root nodes", async () => {
     const steps: string[] = [];
     let grandChild;
-    class GrandChild extends Component<any, any> {
+    class GrandChild extends Component {
       static template = xml`<span t-on-ev="_onEv"/>`;
       constructor() {
         super(...arguments);
@@ -2425,14 +2142,14 @@ describe("other directives with t-component", () => {
         steps.push("GrandChild");
       }
     }
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<GrandChild t-on-ev="_onEv"/>`;
       static components = { GrandChild };
       _onEv() {
         steps.push("Child");
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<Child t-on-ev="_onEv"/>`;
       static components = { Child };
       _onEv() {
@@ -2449,7 +2166,7 @@ describe("other directives with t-component", () => {
   test("t-on on unmounted components", async () => {
     const steps: string[] = [];
     let child;
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div t-on-click="onClick"/>`;
       mounted() {
         child = this;
@@ -2458,7 +2175,7 @@ describe("other directives with t-component", () => {
         steps.push("click");
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child/></div>`;
       static components = { Child };
       state = useState({ flag: true });
@@ -2475,10 +2192,34 @@ describe("other directives with t-component", () => {
     expect(steps).toEqual(["click"]);
   });
 
+  test("t-on with .capture modifier", async () => {
+    const steps: string[] = [];
+
+    class Child extends Component {
+      static template = xml`<div><span t-on-click="click">hey</span></div>`;
+      click() {
+        steps.push("click");
+      }
+    }
+    class ParentWidget extends Component {
+      static components = { Child };
+      static template = xml`<div><Child t-on-click.capture="capture"/></div>`;
+      capture() {
+        steps.push("captured");
+      }
+    }
+    const widget = new ParentWidget();
+    await widget.mount(fixture);
+
+    fixture.querySelector("span")!.click();
+    expect(env.qweb.templates[ParentWidget.template].fn.toString()).toMatchSnapshot();
+    expect(steps).toEqual(["captured", "click"]);
+  });
+
   test("t-on on destroyed components", async () => {
     const steps: string[] = [];
     let child;
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div t-on-click="onClick"/>`;
       mounted() {
         child = this;
@@ -2487,7 +2228,7 @@ describe("other directives with t-component", () => {
         steps.push("click");
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child t-if="state.flag"/></div>`;
       static components = { Child };
       state = useState({ flag: true });
@@ -2508,10 +2249,10 @@ describe("other directives with t-component", () => {
   test("t-on on destroyed components, part 2", async () => {
     const steps: string[] = [];
     let child;
-    class GrandChild extends Component<any, any> {
+    class GrandChild extends Component {
       static template = xml`<div>grandchild</div>`;
     }
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div><GrandChild t-ref="gc" t-on-click="onClick"/></div>`;
       static components = { GrandChild };
       gc = useRef("gc");
@@ -2522,7 +2263,7 @@ describe("other directives with t-component", () => {
         steps.push("click");
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><Child t-if="state.flag"/></div>`;
       static components = { Child };
       state = useState({ flag: true });
@@ -2542,8 +2283,8 @@ describe("other directives with t-component", () => {
 
   test("t-if works with t-component", async () => {
     env.qweb.addTemplate("ParentWidget", `<div><t t-component="child" t-if="state.flag"/></div>`);
-    class Child extends Component<any, any> {}
-    class ParentWidget extends Component<any, any> {
+    class Child extends Component {}
+    class ParentWidget extends Component {
       static components = { child: Child };
       state = useState({ flag: true });
     }
@@ -2572,8 +2313,8 @@ describe("other directives with t-component", () => {
           <t t-else="" t-component="child"/>
         </div>`
     );
-    class Child extends Component<any, any> {}
-    class ParentWidget extends Component<any, any> {
+    class Child extends Component {}
+    class ParentWidget extends Component {
       static components = { child: Child };
       state = useState({ flag: true });
     }
@@ -2598,8 +2339,8 @@ describe("other directives with t-component", () => {
           <t t-elif="!state.flag" t-component="child"/>
         </div>`
     );
-    class Child extends Component<any, any> {}
-    class ParentWidget extends Component<any, any> {
+    class Child extends Component {}
+    class ParentWidget extends Component {
       static components = { child: Child };
       state = useState({ flag: true });
     }
@@ -2624,8 +2365,8 @@ describe("other directives with t-component", () => {
           <t t-else="" t-component="child"/>
         </div>`
     );
-    class Child extends Component<any, any> {}
-    class ParentWidget extends Component<any, any> {
+    class Child extends Component {}
+    class ParentWidget extends Component {
       static components = { child: Child };
       state = useState({ flag: true });
     }
@@ -2642,7 +2383,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-foreach with t-component, and update", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`
         <span>
           <t t-esc="state.val"/>
@@ -2653,7 +2394,7 @@ describe("other directives with t-component", () => {
         this.state.val = "B";
       }
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static components = { Child };
       static template = xml`
         <div>
@@ -2672,7 +2413,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-set outside modified in t-foreach", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="iter" t-value="0"/>
@@ -2693,7 +2434,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-set outside modified in t-if", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="iter" t-value="0"/>
@@ -2727,7 +2468,7 @@ describe("other directives with t-component", () => {
   test("t-set in t-if", async () => {
     // Weird that code block within 'if' leaks outside of it
     // Python does the same
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="flag" t-value="state.flag" />
@@ -2758,7 +2499,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-set can't alter component", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <p><t t-esc="iter"/></p>
@@ -2781,7 +2522,7 @@ describe("other directives with t-component", () => {
       "ChildWidget",
       `<div><t t-esc="iter"/><t t-set="iter" t-value="'called'"/><t t-esc="iter"/></div>`
     );
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="iter" t-value="'source'"/>
@@ -2802,7 +2543,7 @@ describe("other directives with t-component", () => {
       "ChildWidget",
       `<div><t t-esc="iter"/><t t-set="iter" t-value="'called'"/><t t-esc="iter"/></div>`
     );
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="iter" t-value="'source'"/>
@@ -2821,10 +2562,10 @@ describe("other directives with t-component", () => {
   });
 
   test("slot setted value (with t-set) not accessible with t-esc", async () => {
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div><t t-esc="iter"/><t t-set="iter" t-value="'called'"/><t t-esc="iter"/></div>`;
     }
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static components = { ChildWidget };
       static template = xml`
       <div>
@@ -2845,7 +2586,7 @@ describe("other directives with t-component", () => {
 
   test("t-set not altered by child widget", async () => {
     let child;
-    class ChildWidget extends Component<any, any> {
+    class ChildWidget extends Component {
       static template = xml`<div><t t-esc="iter"/><t t-set="iter" t-value="'called'"/><t t-esc="iter"/></div>`;
       iter = "child";
       constructor() {
@@ -2853,7 +2594,7 @@ describe("other directives with t-component", () => {
         child = this;
       }
     }
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static components = { ChildWidget };
       static template = xml`
       <div>
@@ -2872,7 +2613,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-set outside modified in t-foreach increment-after operator", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="iter" t-value="0"/>
@@ -2891,7 +2632,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-set outside modified in t-foreach increment-before operator", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="iter" t-value="0"/>
@@ -2910,7 +2651,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-on expression in t-foreach", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <div t-foreach="state.values" t-as="val" t-key="val">
@@ -2937,7 +2678,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-on expression in t-foreach with t-set", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="bossa" t-value="'nova'"/>
@@ -2966,7 +2707,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-on method call in t-foreach", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <div t-foreach="state.values" t-as="val" t-key="val">
@@ -2997,7 +2738,7 @@ describe("other directives with t-component", () => {
   });
 
   test("t-on expression captured in t-foreach", async () => {
-    class SomeWidget extends Component<any, any> {
+    class SomeWidget extends Component {
       static template = xml`
       <div>
         <t t-set="iter" t-value="0" />
@@ -3035,11 +2776,11 @@ describe("random stuff/miscellaneous", () => {
       `<div><t t-foreach="Array(2)">txt</t><t t-component="widget"/></div>`
     );
 
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`<div/>`;
     }
 
-    class Test extends Component<any, any> {
+    class Test extends Component {
       static components = { widget: SomeComponent };
     }
     const widget = new Test();
@@ -3050,10 +2791,10 @@ describe("random stuff/miscellaneous", () => {
   test("t-on with handler bound to dynamic argument on a t-foreach", async () => {
     expect.assertions(3);
 
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div/>`;
     }
-    class ParentWidget extends Component<any, any> {
+    class ParentWidget extends Component {
       static template = xml`
         <div>
           <t t-foreach="items" t-as="item">
@@ -3079,8 +2820,8 @@ describe("random stuff/miscellaneous", () => {
     // interplay between components and vnodes, a sub widget vnode was patched
     // twice.
     env.qweb.addTemplate("Parent", `<div><t t-component="child" flag="state.flag"/></div>`);
-    class Child extends Component<any, any> {}
-    class Parent extends Component<any, any> {
+    class Child extends Component {}
+    class Parent extends Component {
       static components = { child: Child };
       state = useState({ flag: false });
     }
@@ -3100,8 +2841,8 @@ describe("random stuff/miscellaneous", () => {
       "Parent",
       `<div><t t-component="child" t-key="'somestring'" flag="state.flag"/></div>`
     );
-    class Child extends Component<any, any> {}
-    class Parent extends Component<any, any> {
+    class Child extends Component {}
+    class Parent extends Component {
       static components = { child: Child };
       state = useState({ flag: false });
     }
@@ -3117,7 +2858,7 @@ describe("random stuff/miscellaneous", () => {
     let steps: string[] = [];
     let c: C;
 
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       name: string = "test";
       async willStart() {
         steps.push(`${this.name}:willStart`);
@@ -3126,9 +2867,9 @@ describe("random stuff/miscellaneous", () => {
         steps.push(`${this.name}:render`);
         return super.__render(f);
       }
-      __patch(vnode) {
+      __patch(target, vnode) {
         steps.push(`${this.name}:__patch`);
-        super.__patch(vnode);
+        super.__patch(target, vnode);
       }
       mounted() {
         steps.push(`${this.name}:mounted`);
@@ -3264,7 +3005,7 @@ describe("random stuff/miscellaneous", () => {
 
   test("can inject values in tagged templates", async () => {
     const SUBTEMPLATE = xml`<span><t t-esc="state.n"/></span>`;
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><t t-call="${SUBTEMPLATE}"/></div>`;
       state = useState({ n: 42 });
     }
@@ -3276,1150 +3017,9 @@ describe("random stuff/miscellaneous", () => {
   });
 });
 
-describe("async rendering", () => {
-  test("destroying a widget before start is over", async () => {
-    let def = makeDeferred();
-    class W extends Component<any, any> {
-      static template = xml`<div/>`;
-      willStart(): Promise<void> {
-        return def;
-      }
-    }
-    const w = new W();
-    w.mount(fixture);
-    expect(w.__owl__.isDestroyed).toBe(false);
-    expect(w.__owl__.isMounted).toBe(false);
-    w.destroy();
-    def.resolve();
-    await nextTick();
-    expect(w.__owl__.isDestroyed).toBe(true);
-    expect(w.__owl__.isMounted).toBe(false);
-  });
-
-  test("destroying/recreating a subwidget with different props (if start is not over)", async () => {
-    let def = makeDeferred();
-    let n = 0;
-    class Child extends Component<any, any> {
-      static template = xml`<span>child:<t t-esc="props.val"/></span>`;
-      constructor(parent, props) {
-        super(parent, props);
-        n++;
-      }
-      willStart(): Promise<void> {
-        return def;
-      }
-    }
-    class W extends Component<any, any> {
-      static template = xml`<div><t t-if="state.val > 1"><Child val="state.val"/></t></div>`;
-      static components = { Child };
-      state = useState({ val: 1 });
-    }
-
-    const w = new W();
-    await w.mount(fixture);
-    expect(n).toBe(0);
-    w.state.val = 2;
-
-    await nextMicroTick();
-    expect(n).toBe(1);
-    w.state.val = 3;
-    await nextMicroTick();
-    expect(n).toBe(2);
-    def.resolve();
-    await nextTick();
-    expect(children(w).length).toBe(1);
-    expect(fixture.innerHTML).toBe("<div><span>child:3</span></div>");
-  });
-
-  test("creating two async components, scenario 1", async () => {
-    let defA = makeDeferred();
-    let defB = makeDeferred();
-    let nbRenderings: number = 0;
-
-    class ChildA extends Component<any, any> {
-      static template = xml`<span><t t-esc="getValue()"/></span>`;
-      willStart(): Promise<void> {
-        return defA;
-      }
-      getValue() {
-        nbRenderings++;
-        return "a";
-      }
-    }
-
-    class ChildB extends Component<any, any> {
-      static template = xml`<span>b</span>`;
-      willStart(): Promise<void> {
-        return defB;
-      }
-    }
-    class Parent extends Component<any, any> {
-      static template = xml`
-        <div>
-          <t t-if="state.flagA"><ChildA /></t>
-          <t t-if="state.flagB"><ChildB /></t>
-        </div>`;
-      static components = { ChildA, ChildB };
-      state = useState({ flagA: false, flagB: false });
-    }
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div></div>");
-    parent.state.flagA = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div></div>");
-    parent.state.flagB = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div></div>");
-    defB.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div></div>");
-    expect(nbRenderings).toBe(0);
-    defA.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>a</span><span>b</span></div>");
-    expect(nbRenderings).toBe(1);
-  });
-
-  test("creating two async components, scenario 2", async () => {
-    let defA = makeDeferred();
-    let defB = makeDeferred();
-
-    class ChildA extends Component<any, any> {
-      static template = xml`<span>a<t t-esc="props.val"/></span>`;
-      willUpdateProps(): Promise<void> {
-        return defA;
-      }
-    }
-    class ChildB extends Component<any, any> {
-      static template = xml`<span>b<t t-esc="props.val"/></span>`;
-      willStart(): Promise<void> {
-        return defB;
-      }
-    }
-
-    class Parent extends Component<any, any> {
-      static template = xml`
-        <div>
-          <ChildA val="state.valA"/>
-          <t t-if="state.flagB"><ChildB val="state.valB"/></t>
-        </div>`;
-      static components = { ChildA, ChildB };
-      state = useState({ valA: 1, valB: 2, flagB: false });
-    }
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>a1</span></div>");
-    parent.state.valA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>a1</span></div>");
-    parent.state.flagB = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>a1</span></div>");
-    defB.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>a1</span></div>");
-    defA.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>a2</span><span>b2</span></div>");
-  });
-
-  test("creating two async components, scenario 3 (patching in the same frame)", async () => {
-    let defA = makeDeferred();
-    let defB = makeDeferred();
-
-    class ChildA extends Component<any, any> {
-      static template = xml`<span>a<t t-esc="props.val"/></span>`;
-      willUpdateProps(): Promise<void> {
-        return defA;
-      }
-    }
-    class ChildB extends Component<any, any> {
-      static template = xml`<span>b<t t-esc="props.val"/></span>`;
-      willStart(): Promise<void> {
-        return defB;
-      }
-    }
-
-    class Parent extends Component<any, any> {
-      static template = xml`
-        <div>
-          <ChildA val="state.valA"/>
-          <t t-if="state.flagB"><ChildB val="state.valB"/></t>
-        </div>`;
-      static components = { ChildA, ChildB };
-      state = useState({ valA: 1, valB: 2, flagB: false });
-    }
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>a1</span></div>");
-    parent.state.valA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>a1</span></div>");
-    parent.state.flagB = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>a1</span></div>");
-    defB.resolve();
-    expect(fixture.innerHTML).toBe("<div><span>a1</span></div>");
-    defA.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>a2</span><span>b2</span></div>");
-  });
-
-  test("update a sub-component twice in the same frame", async () => {
-    const steps: string[] = [];
-    const defs = [makeDeferred(), makeDeferred()];
-    let index = 0;
-    class ChildA extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.val"/></span>`;
-      willUpdateProps(): Promise<void> {
-        return defs[index++];
-      }
-      patched() {
-        steps.push("patched");
-      }
-    }
-
-    class Parent extends Component<any, any> {
-      static template = xml`<div><ChildA val="state.valA"/></div>`;
-      static components = { ChildA };
-      state = useState({ valA: 1 });
-    }
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    parent.state.valA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    parent.state.valA = 3;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    defs[0].resolve();
-    await Promise.resolve();
-    defs[1].resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>3</span></div>");
-    expect(steps).toEqual(["patched"]);
-  });
-
-  test("update a sub-component twice in the same frame, 2", async () => {
-    const steps: string[] = [];
-    class ChildA extends Component<any, any> {
-      static template = xml`<span><t t-esc="val()"/></span>`;
-      patched() {
-        steps.push("patched");
-      }
-      val() {
-        steps.push("render");
-        return this.props.val;
-      }
-    }
-
-    class Parent extends Component<any, any> {
-      static template = xml`<div><ChildA val="state.valA"/></div>`;
-      static components = { ChildA };
-      state = useState({ valA: 1 });
-    }
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    parent.state.valA = 2;
-    await nextMicroTick();
-    expect(steps).toEqual(["render"]);
-    await nextMicroTick();
-    // For an unknown reason, this test fails on windows without the next microtick. It works
-    // in linux and osx, but fails on at least this machine.
-    // I do not see anything harmful in waiting an extra tick. But it is annoying to not
-    // know what is different.
-    await nextMicroTick();
-    expect(steps).toEqual(["render", "render"]);
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    parent.state.valA = 3;
-    await nextMicroTick();
-    expect(steps).toEqual(["render", "render"]);
-    await nextMicroTick();
-    // same as above
-    await nextMicroTick();
-    expect(steps).toEqual(["render", "render", "render"]);
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>3</span></div>");
-    expect(steps).toEqual(["render", "render", "render", "patched"]);
-  });
-
-  test("components in a node in a t-foreach ", async () => {
-    class Child extends Component<any, any> {}
-
-    class App extends Component<any, any> {
-      static components = { Child };
-
-      get items() {
-        return [1, 2];
-      }
-    }
-    env.qweb.addTemplates(`
-        <templates>
-            <div t-name="Child"><t t-esc="props.item"/></div>
-            <div t-name="App">
-                <ul>
-                    <t t-foreach="items" t-as="item">
-                        <li t-key="'li_'+item">
-                            <Child item="item"/>
-                        </li>
-                    </t>
-                </ul>
-            </div>
-        </templates>`);
-
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe(
-      "<div><ul><li><div>1</div></li><li><div>2</div></li></ul></div>"
-    );
-  });
-
-  test("properly behave when destroyed/unmounted while rendering ", async () => {
-    const def = makeDeferred();
-
-    class SubChild extends Component<any, any> {
-      static template = xml`<div/>`;
-      willPatch() {
-        throw new Error("Should not happen!");
-      }
-      patched() {
-        throw new Error("Should not happen!");
-      }
-      willUpdateProps() {
-        return def;
-      }
-    }
-
-    class Child extends Component<any, any> {
-      static template = xml`<div><SubChild /></div>`;
-      static components = { SubChild };
-    }
-
-    class Parent extends Component<any, any> {
-      static template = xml`<div><t t-if="state.flag"><Child val="state.val"/></t></div>`;
-      static components = { Child };
-      state = useState({ flag: true, val: "Framboise Lindemans" });
-    }
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><div><div></div></div></div>");
-
-    // this change triggers a rendering of the parent. This rendering is delayed,
-    // because child is now waiting for def to be resolved
-    parent.state.val = "Framboise Girardin";
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><div><div></div></div></div>");
-
-    // with this, we remove child, and subchild, even though it is not finished
-    // rendering from previous changes
-    parent.state.flag = false;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div></div>");
-
-    // we now resolve def, so the child rendering is now complete.
-    (<any>def).resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div></div>");
-  });
-
-  test.skip("reuse widget if possible, in some async situation", async () => {
-    // this optimization has been temporarily deactivated
-    env.qweb.addTemplates(`
-        <templates>
-            <span t-name="ChildA">a<t t-esc="props.val"/></span>
-            <span t-name="ChildB">b<t t-esc="props.val"/></span>
-            <span t-name="Parent">
-                <t t-if="state.flag">
-                    <ChildA val="state.valA"/>
-                    <ChildB val="state.valB"/>
-                </t>
-            </span>
-        </templates>
-    `);
-
-    let destroyCount = 0;
-    class ChildA extends Component<any, any> {
-      destroy() {
-        destroyCount++;
-        super.destroy();
-      }
-    }
-    class ChildB extends Component<any, any> {
-      willStart(): any {
-        return new Promise(function() {});
-      }
-    }
-    class Parent extends Component<any, any> {
-      static components = { ChildA, ChildB };
-      state = useState({ valA: 1, valB: 2, flag: false });
-    }
-    const parent = new Parent();
-    await parent.mount(fixture);
-
-    expect(destroyCount).toBe(0);
-
-    parent.state.flag = true;
-    await nextTick();
-    expect(destroyCount).toBe(0);
-
-    parent.state.valB = 3;
-    await nextTick();
-    expect(destroyCount).toBe(0);
-  });
-
-  test("rendering component again in next microtick", async () => {
-    class Child extends Component<any, any> {
-      static template = xml`<div t-name="Child">Child</div>`;
-    }
-
-    class App extends Component<any, any> {
-      static template = xml`
-        <div>
-          <button t-on-click="onClick">Click</button>
-          <t t-if="env.flag"><Child/></t>
-        </div>`;
-      static components = { Child };
-
-      async onClick() {
-        (env as any).flag = true;
-        this.render();
-        await Promise.resolve();
-        this.render();
-      }
-    }
-
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><button>Click</button></div>");
-    fixture.querySelector("button")!.click();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><button>Click</button><div>Child</div></div>");
-  });
-
-  test("concurrent renderings scenario 1", async () => {
-    const def = makeDeferred();
-    let stateB;
-
-    class ComponentC extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.fromA"/><t t-esc="someValue()"/></span>`;
-      someValue() {
-        return this.props.fromB;
-      }
-      willUpdateProps() {
-        return def;
-      }
-    }
-    ComponentC.prototype.someValue = jest.fn(ComponentC.prototype.someValue);
-
-    class ComponentB extends Component<any, any> {
-      static components = { ComponentC };
-      static template = xml`<p><ComponentC fromA="props.fromA" fromB="state.fromB" /></p>`;
-      state = useState({ fromB: "b" });
-
-      constructor(parent, props) {
-        super(parent, props);
-        stateB = this.state;
-      }
-    }
-
-    class ComponentA extends Component<any, any> {
-      static components = { ComponentB };
-      static template = xml`<div><ComponentB fromA="state.fromA"/></div>`;
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div><p><span>1b</span></p></div>");
-
-    stateB.fromB = "c";
-    await nextTick();
-
-    expect(fixture.innerHTML).toBe("<div><p><span>1b</span></p></div>");
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span>1b</span></p></div>");
-
-    expect(ComponentC.prototype.someValue).toBeCalledTimes(1);
-    def.resolve();
-    await nextTick();
-
-    expect(ComponentC.prototype.someValue).toBeCalledTimes(2);
-    expect(fixture.innerHTML).toBe("<div><p><span>2c</span></p></div>");
-  });
-
-  test("concurrent renderings scenario 2", async () => {
-    // this test asserts that a rendering initiated before another one, and that
-    // ends after it, is re-mapped to that second rendering
-    const defs = [makeDeferred(), makeDeferred()];
-    let index = 0;
-    let stateB;
-    class ComponentC extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.fromA"/><t t-esc="props.fromB"/></span>`;
-      willUpdateProps() {
-        return defs[index++];
-      }
-    }
-
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><ComponentC fromA="props.fromA" fromB="state.fromB" /></p>`;
-      static components = { ComponentC };
-      state = useState({ fromB: "b" });
-
-      constructor(parent, props) {
-        super(parent, props);
-        stateB = this.state;
-      }
-    }
-
-    class ComponentA extends Component<any, any> {
-      static template = xml`<div><t t-esc="state.fromA"/><ComponentB fromA="state.fromA"/></div>`;
-      static components = { ComponentB };
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div>1<p><span>1b</span></p></div>");
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div>1<p><span>1b</span></p></div>");
-
-    stateB.fromB = "c";
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div>1<p><span>1b</span></p></div>");
-
-    defs[1].resolve(); // resolve rendering initiated in B
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div>2<p><span>2c</span></p></div>");
-
-    defs[0].resolve(); // resolve rendering initiated in A
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div>2<p><span>2c</span></p></div>");
-  });
-
-  test("concurrent renderings scenario 2bis", async () => {
-    const defs = [makeDeferred(), makeDeferred()];
-    let index = 0;
-    let stateB;
-    class ComponentC extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.fromA"/><t t-esc="props.fromB"/></span>`;
-      willUpdateProps() {
-        return defs[index++];
-      }
-    }
-
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><ComponentC fromA="props.fromA" fromB="state.fromB" /></p>`;
-      static components = { ComponentC };
-      state = useState({ fromB: "b" });
-
-      constructor(parent, props) {
-        super(parent, props);
-        stateB = this.state;
-      }
-    }
-
-    class ComponentA extends Component<any, any> {
-      static template = xml`<div><ComponentB fromA="state.fromA"/></div>`;
-      static components = { ComponentB };
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div><p><span>1b</span></p></div>");
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span>1b</span></p></div>");
-
-    stateB.fromB = "c";
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span>1b</span></p></div>");
-
-    defs[0].resolve(); // resolve rendering initiated in A
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span>1b</span></p></div>"); // TODO: is this what we want?? 2b could be ok too
-
-    defs[1].resolve(); // resolve rendering initiated in B
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span>2c</span></p></div>");
-  });
-
-  test("concurrent renderings scenario 3", async () => {
-    const defB = makeDeferred();
-    const defsD = [makeDeferred(), makeDeferred()];
-    let index = 0;
-    let stateC;
-
-    class ComponentD extends Component<any, any> {
-      static template = xml`<i><t t-esc="props.fromA"/><t t-esc="someValue()"/></i>`;
-      someValue() {
-        return this.props.fromC;
-      }
-      willUpdateProps() {
-        return defsD[index++];
-      }
-    }
-    ComponentD.prototype.someValue = jest.fn(ComponentD.prototype.someValue);
-
-    class ComponentC extends Component<any, any> {
-      static template = xml`<span><ComponentD fromA="props.fromA" fromC="state.fromC" /></span>`;
-      static components = { ComponentD };
-      state = useState({ fromC: "c" });
-      constructor(parent, props) {
-        super(parent, props);
-        stateC = this.state;
-      }
-    }
-
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><ComponentC fromA="props.fromA" /></p>`;
-      static components = { ComponentC };
-
-      willUpdateProps() {
-        return defB;
-      }
-    }
-
-    class ComponentA extends Component<any, any> {
-      static components = { ComponentB };
-      static template = xml`<div><ComponentB fromA="state.fromA"/></div>`;
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    stateC.fromC = "d";
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    defB.resolve(); // resolve rendering initiated in A (still blocked in D)
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    defsD[0].resolve(); // resolve rendering initiated in C (should be ignored)
-    await nextTick();
-    expect(ComponentD.prototype.someValue).toBeCalledTimes(1);
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    defsD[1].resolve(); // completely resolve rendering initiated in A
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>2d</i></span></p></div>");
-    expect(ComponentD.prototype.someValue).toBeCalledTimes(2);
-  });
-
-  test("concurrent renderings scenario 4", async () => {
-    const defB = makeDeferred();
-    const defsD = [makeDeferred(), makeDeferred()];
-    let index = 0;
-    let stateC;
-
-    class ComponentD extends Component<any, any> {
-      static template = xml`<i><t t-esc="props.fromA"/><t t-esc="someValue()"/></i>`;
-      someValue() {
-        return this.props.fromC;
-      }
-      willUpdateProps() {
-        return defsD[index++];
-      }
-    }
-    ComponentD.prototype.someValue = jest.fn(ComponentD.prototype.someValue);
-
-    class ComponentC extends Component<any, any> {
-      static template = xml`<span><ComponentD fromA="props.fromA" fromC="state.fromC" /></span>`;
-      static components = { ComponentD };
-      state = useState({ fromC: "c" });
-      constructor(parent, props) {
-        super(parent, props);
-        stateC = this.state;
-      }
-    }
-
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><ComponentC fromA="props.fromA" /></p>`;
-      static components = { ComponentC };
-
-      willUpdateProps() {
-        return defB;
-      }
-    }
-
-    class ComponentA extends Component<any, any> {
-      static components = { ComponentB };
-      static template = xml`<div><ComponentB fromA="state.fromA"/></div>`;
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    stateC.fromC = "d";
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    defB.resolve(); // resolve rendering initiated in A (still blocked in D)
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>1c</i></span></p></div>");
-
-    defsD[1].resolve(); // completely resolve rendering initiated in A
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>2d</i></span></p></div>");
-    expect(ComponentD.prototype.someValue).toBeCalledTimes(2);
-
-    defsD[0].resolve(); // resolve rendering initiated in C (should be ignored)
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span><i>2d</i></span></p></div>");
-    expect(ComponentD.prototype.someValue).toBeCalledTimes(2);
-  });
-
-  test("concurrent renderings scenario 5", async () => {
-    const defsB = [makeDeferred(), makeDeferred()];
-    let index = 0;
-
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><t t-esc="someValue()" /></p>`;
-      someValue() {
-        return this.props.fromA;
-      }
-      willUpdateProps() {
-        return defsB[index++];
-      }
-    }
-    ComponentB.prototype.someValue = jest.fn(ComponentB.prototype.someValue);
-
-    class ComponentA extends Component<any, any> {
-      static components = { ComponentB };
-      static template = xml`<div><ComponentB fromA="state.fromA"/></div>`;
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div><p>1</p></div>");
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>1</p></div>");
-
-    component.state.fromA = 3;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>1</p></div>");
-
-    defsB[0].resolve(); // resolve first re-rendering (should be ignored)
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>1</p></div>");
-    expect(ComponentB.prototype.someValue).toBeCalledTimes(1);
-
-    defsB[1].resolve(); // resolve second re-rendering
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>3</p></div>");
-    expect(ComponentB.prototype.someValue).toBeCalledTimes(2);
-  });
-
-  test("concurrent renderings scenario 6", async () => {
-    const defsB = [makeDeferred(), makeDeferred()];
-    let index = 0;
-
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><t t-esc="someValue()" /></p>`;
-      someValue() {
-        return this.props.fromA;
-      }
-      willUpdateProps() {
-        return defsB[index++];
-      }
-    }
-    ComponentB.prototype.someValue = jest.fn(ComponentB.prototype.someValue);
-
-    class ComponentA extends Component<any, any> {
-      static components = { ComponentB };
-      static template = xml`<div><ComponentB fromA="state.fromA"/></div>`;
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div><p>1</p></div>");
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>1</p></div>");
-
-    component.state.fromA = 3;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>1</p></div>");
-
-    defsB[1].resolve(); // resolve second re-rendering
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>3</p></div>");
-    expect(ComponentB.prototype.someValue).toBeCalledTimes(2);
-
-    defsB[0].resolve(); // resolve first re-rendering (should be ignored)
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>3</p></div>");
-    expect(ComponentB.prototype.someValue).toBeCalledTimes(2);
-  });
-
-  test("concurrent renderings scenario 7", async () => {
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><t t-esc="props.fromA" /><t t-esc="someValue()" /></p>`;
-      state = useState({ fromB: "b" });
-      someValue() {
-        return this.state.fromB;
-      }
-      async willUpdateProps() {
-        this.state.fromB = "c";
-      }
-    }
-    ComponentB.prototype.someValue = jest.fn(ComponentB.prototype.someValue);
-
-    class ComponentA extends Component<any, any> {
-      static components = { ComponentB };
-      static template = xml`<div><ComponentB fromA="state.fromA"/></div>`;
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div><p>1b</p></div>");
-    expect(ComponentB.prototype.someValue).toBeCalledTimes(1);
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>2c</p></div>");
-    expect(ComponentB.prototype.someValue).toBeCalledTimes(2);
-  });
-
-  test("concurrent renderings scenario 8", async () => {
-    const def = makeDeferred();
-    let stateB;
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><t t-esc="props.fromA" /><t t-esc="state.fromB" /></p>`;
-      state = useState({ fromB: "b" });
-      constructor(parent, props) {
-        super(parent, props);
-        stateB = this.state;
-      }
-      async willUpdateProps(nextProps) {
-        return def;
-      }
-    }
-
-    class ComponentA extends Component<any, any> {
-      static components = { ComponentB };
-      static template = xml`<div><ComponentB fromA="state.fromA"/></div>`;
-      state = useState({ fromA: 1 });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div><p>1b</p></div>");
-
-    component.state.fromA = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>1b</p></div>");
-
-    stateB.fromB = "c";
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>1b</p></div>");
-
-    def.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>2c</p></div>");
-  });
-
-  test("concurrent renderings scenario 9", async () => {
-    // Here is the global idea of this scenario:
-    //       A
-    //      / \
-    //     B   C
-    //         |
-    //         D
-    // A state is updated, triggering a whole re-rendering
-    // B is async, and blocked
-    // C (and D) are rendered
-    // C state is updated, producing a re-rendering of C and D
-    // this last re-rendering of C should be correctly re-mapped to the whole
-    // re-rendering
-    const def = makeDeferred();
-    let stateC;
-    class ComponentD extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.fromA"/><t t-esc="props.fromC"/></span>`;
-    }
-    class ComponentC extends Component<any, any> {
-      static template = xml`<p><ComponentD fromA="props.fromA" fromC="state.fromC" /></p>`;
-      static components = { ComponentD };
-      state = useState({ fromC: "b1" });
-
-      constructor(parent, props) {
-        super(parent, props);
-        stateC = this.state;
-      }
-    }
-    class ComponentB extends Component<any, any> {
-      static template = xml`<b><t t-esc="props.fromA"/></b>`;
-      willUpdateProps() {
-        return def;
-      }
-    }
-    class ComponentA extends Component<any, any> {
-      static template = xml`
-        <div>
-          <t t-esc="state.fromA"/>
-          <ComponentB fromA="state.fromA"/>
-          <ComponentC fromA="state.fromA"/>
-        </div>`;
-      static components = { ComponentB, ComponentC };
-      state = useState({ fromA: "a1" });
-    }
-
-    const component = new ComponentA();
-    await component.mount(fixture);
-
-    expect(fixture.innerHTML).toBe("<div>a1<b>a1</b><p><span>a1b1</span></p></div>");
-
-    component.state.fromA = "a2";
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div>a1<b>a1</b><p><span>a1b1</span></p></div>");
-
-    stateC.fromC = "b2";
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div>a1<b>a1</b><p><span>a1b1</span></p></div>");
-
-    def.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div>a2<b>a2</b><p><span>a2b2</span></p></div>");
-  });
-
-  test("concurrent renderings scenario 10", async () => {
-    // Here is the global idea of this scenario:
-    //       A
-    //       |
-    //       B    <- async willUpdateProps
-    //     -----  <- conditional (initialy false)
-    //       |
-    //       C    <- async willStart
-    // Render A and B normally
-    // Change the condition on B to trigger a re-rendering with C (async willStart)
-    // Change the state on A to trigger a global re-rendering, which is blocked
-    // in B (async willUpdateProps)
-    // Resolve the willStart of C: the first re-rendering has been cancelled by
-    // the global re-rendering, but handlers waiting for the rendering promise to
-    // resolve might execute and we don't want them to crash/do anything
-    const defB = makeDeferred();
-    const defC = makeDeferred();
-    let stateB;
-    class ComponentC extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.value"/></span>`;
-      willStart() {
-        return defC;
-      }
-    }
-    ComponentC.prototype.__render = jest.fn(ComponentC.prototype.__render);
-    class ComponentB extends Component<any, any> {
-      static template = xml`<p><ComponentC t-if="state.hasChild" value="props.value"/></p>`;
-      state = useState({ hasChild: false });
-      static components = { ComponentC };
-      constructor(parent, props) {
-        super(parent, props);
-        stateB = this.state;
-      }
-      willUpdateProps() {
-        return defB;
-      }
-    }
-    class ComponentA extends Component<any, any> {
-      static template = xml`<div><ComponentB value="state.value"/></div>`;
-      static components = { ComponentB };
-      state = useState({ value: 1 });
-    }
-
-    const componentA = new ComponentA();
-    await componentA.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><p></p></div>");
-    stateB.hasChild = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p></p></div>");
-
-    componentA.state.value = 2;
-    defC.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p></p></div>");
-
-    defB.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p><span>2</span></p></div>");
-    expect(ComponentC.prototype.__render).toHaveBeenCalledTimes(1);
-  });
-
-  test("concurrent renderings scenario 11", async () => {
-    // This scenario is the following: we have a component being updated (by props),
-    // and then rendered (render method), but before the willUpdateProps resolves.
-    // We check that in that case, the return value of the render method is a promise
-    // that is resolved when the component is completely rendered (so, properly
-    // remapped to the promise of the ambient rendering)
-    const def = makeDeferred();
-    let child;
-    class Child extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.val"/>|<t t-esc="val"/></span>`;
-      val = 3;
-      willUpdateProps() {
-        child = this;
-        return def;
-      }
-    }
-
-    class Parent extends Component<any, any> {
-      static template = xml`<div><Child val="state.valA"/></div>`;
-      static components = { Child };
-      state = useState({ valA: 1 });
-    }
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>1|3</span></div>");
-    parent.state.valA = 2;
-
-    await nextTick();
-    setTimeout(() => {
-      def.resolve();
-    }, 20);
-    child.val = 5;
-    await child.render();
-    expect(fixture.innerHTML).toBe("<div><span>2|5</span></div>");
-  });
-
-  test("concurrent renderings scenario 12", async () => {
-    // In this scenario, we have a parent component that will be re-rendered
-    // several times simultaneously:
-    //    - once in a tick: it will create a new fiber, render it, but will have
-    //    to wait for its child (blocking) to be completed
-    //    - twice in the next tick: it will twice reuse the same fiber (as it is
-    //    rendered but not completed yet)
-    const def = makeDeferred();
-
-    class Child extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.val"/></span>`;
-      willUpdateProps() {
-        return def;
-      }
-    }
-
-    class Parent extends Component<any, any> {
-      static template = xml`<div><Child val="state.val"/></div>`;
-      static components = { Child };
-      state = useState({ val: 1 });
-    }
-    Parent.prototype.__render = jest.fn(Parent.prototype.__render);
-
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    expect(Parent.prototype.__render).toHaveBeenCalledTimes(1);
-
-    parent.state.val = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    expect(Parent.prototype.__render).toHaveBeenCalledTimes(2);
-
-    parent.state.val = 3;
-    parent.state.val = 4;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    expect(Parent.prototype.__render).toHaveBeenCalledTimes(3);
-
-    def.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>4</span></div>");
-    expect(Parent.prototype.__render).toHaveBeenCalledTimes(3);
-  });
-
-  test("concurrent renderings scenario 13", async () => {
-    let lastChild;
-    class Child extends Component<any, any> {
-      static template = xml`<span><t t-esc="state.val"/></span>`;
-      state = useState({ val: 0 });
-      mounted() {
-        if (lastChild) {
-          lastChild.state.val = 0;
-        }
-        lastChild = this;
-        this.state.val = 1;
-      }
-    }
-
-    class Parent extends Component<any, any> {
-      static template = xml`
-        <div>
-          <Child/>
-          <Child t-if="state.bool"/>
-        </div>`;
-      static components = { Child };
-      state = useState({ bool: false });
-    }
-
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>0</span></div>");
-
-    await nextTick(); // wait for changes triggered in mounted to be applied
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-
-    parent.state.bool = true;
-    await nextTick(); // wait for this change to be applied
-    await nextTick(); // wait for changes triggered in mounted to be applied
-    expect(fixture.innerHTML).toBe("<div><span>0</span><span>1</span></div>");
-  });
-
-  test("change state and call manually render: no unnecessary rendering", async () => {
-    class Widget extends Component<any, any> {
-      static template = xml`<div><t t-esc="state.val"/></div>`;
-      state = useState({ val: 1 });
-    }
-    Widget.prototype.__render = jest.fn(Widget.prototype.__render);
-
-    const widget = new Widget();
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>1</div>");
-    expect(Widget.prototype.__render).toHaveBeenCalledTimes(1);
-
-    widget.state.val = 2;
-    await widget.render();
-    expect(fixture.innerHTML).toBe("<div>2</div>");
-    expect(Widget.prototype.__render).toHaveBeenCalledTimes(2);
-  });
-});
-
 describe("widget and observable state", () => {
   test("widget is rerendered when its state is changed", async () => {
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       static template = xml`<div><t t-esc="state.drink"/></div>`;
       state = useState({ drink: "water" });
     }
@@ -4437,14 +3037,14 @@ describe("widget and observable state", () => {
     const consoleError = console.error;
     console.error = jest.fn();
     env.qweb.addTemplate("Parent", `<div><Child obj="state.obj"/></div>`);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<div/>`;
       constructor(parent, props) {
         super(parent, props);
         props.obj.coffee = 2;
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       state = useState({ obj: { coffee: 1 } });
       static components = { Child };
     }
@@ -4464,7 +3064,7 @@ describe("widget and observable state", () => {
 
 describe("can deduce template from name", () => {
   test("can find template if name of component", async () => {
-    class ABC extends Component<any, any> {}
+    class ABC extends Component {}
     env.qweb.addTemplate("ABC", "<span>Orval</span>");
     const abc = new ABC();
     await abc.mount(fixture);
@@ -4472,7 +3072,7 @@ describe("can deduce template from name", () => {
   });
 
   test("can find template of parent component", async () => {
-    class ABC extends Component<any, any> {}
+    class ABC extends Component {}
     class DEF extends ABC {}
     env.qweb.addTemplate("ABC", "<span>Orval</span>");
     const def = new DEF();
@@ -4480,8 +3080,17 @@ describe("can deduce template from name", () => {
     expect(fixture.innerHTML).toBe("<span>Orval</span>");
   });
 
+  test("can find template of anonymous component", async () => {
+    class ABC extends Component {}
+    const Anonymous = class extends ABC {};
+    env.qweb.addTemplate("ABC", "<span>Orval</span>");
+    const def = new Anonymous();
+    await def.mount(fixture);
+    expect(fixture.innerHTML).toBe("<span>Orval</span>");
+  });
+
   test("can find template of parent component, defined by template key", async () => {
-    class ABC extends Component<any, any> {
+    class ABC extends Component {
       static template = "Achel";
     }
     class DEF extends ABC {}
@@ -4495,7 +3104,7 @@ describe("can deduce template from name", () => {
     const env2 = makeTestEnv();
     env.qweb.addTemplate("ABC", "<span>Rochefort 8</span>");
     env2.qweb.addTemplate("ABC", "<span>Rochefort 10</span>");
-    class ABC extends Component<any, any> {}
+    class ABC extends Component {}
     const abc = new ABC();
     await abc.mount(fixture);
     expect(fixture.innerHTML).toBe("<span>Rochefort 8</span>");
@@ -4509,7 +3118,7 @@ describe("can deduce template from name", () => {
 
 describe("t-model directive", () => {
   test("basic use, on an input", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`
         <div>
           <input t-model="state.text"/>
@@ -4537,7 +3146,7 @@ describe("t-model directive", () => {
             <span><t t-esc="some.text"/></span>
         </div>
     </templates>`);
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       some = useState({ text: "" });
     }
     const comp = new SomeComponent();
@@ -4563,7 +3172,7 @@ describe("t-model directive", () => {
             </span>
         </div>
     </templates>`);
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       state = useState({ flag: false });
     }
     const comp = new SomeComponent();
@@ -4591,7 +3200,7 @@ describe("t-model directive", () => {
             <span><t t-esc="state.text"/></span>
         </div>
     </templates>`);
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       state = useState({ text: "" });
     }
     const comp = new SomeComponent();
@@ -4614,7 +3223,7 @@ describe("t-model directive", () => {
             <span>Choice: <t t-esc="state.choice"/></span>
         </div>
     </templates>`);
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       state = useState({ choice: "" });
     }
     const comp = new SomeComponent();
@@ -4654,7 +3263,7 @@ describe("t-model directive", () => {
             <span>Choice: <t t-esc="state.color"/></span>
         </div>
     </templates>`);
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       state = useState({ color: "" });
     }
     const comp = new SomeComponent();
@@ -4678,7 +3287,7 @@ describe("t-model directive", () => {
   });
 
   test("on a select, initial state", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`
         <div>
           <select t-model="state.color">
@@ -4697,7 +3306,7 @@ describe("t-model directive", () => {
   });
 
   test("on a sub state key", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`
         <div>
           <input t-model="state.something.text"/>
@@ -4719,7 +3328,7 @@ describe("t-model directive", () => {
   });
 
   test(".lazy modifier", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`
         <div>
             <input t-model.lazy="state.text"/>
@@ -4747,7 +3356,7 @@ describe("t-model directive", () => {
   });
 
   test(".trim modifier", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`
         <div t-name="SomeComponent">
           <input t-model.trim="state.text"/>
@@ -4766,7 +3375,7 @@ describe("t-model directive", () => {
   });
 
   test(".number modifier", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`
         <div>
           <input t-model.number="state.number"/>
@@ -4790,7 +3399,7 @@ describe("t-model directive", () => {
   });
 
   test("in a t-foreach", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`
         <div>
           <t t-foreach="state" t-as="thing" t-key="thing.id">
@@ -4819,7 +3428,7 @@ describe("t-model directive", () => {
   });
 
   test("two inputs in a div with a t-key", async () => {
-    class SomeComponent extends Component<any, any> {
+    class SomeComponent extends Component {
       static template = xml`
         <div t-key="'key'">
           <input class="a" t-if="state.flag"/>
@@ -4856,7 +3465,7 @@ describe("environment and plugins", () => {
 
   test("plugin works as expected", async () => {
     somePlugin(env);
-    class App extends Component<any, any> {
+    class App extends Component {
       static template = xml`
         <div>
             <t t-if="env.someFlag">Red</t>
@@ -4875,11 +3484,11 @@ describe("environment and plugins", () => {
   });
 
   test("can define specific env for root components", async () => {
-    class App1 extends Component<any, any> {
+    class App1 extends Component {
       static template = xml`<span></span>`;
     }
     App1.env = { test: 1 };
-    class App2 extends Component<any, any> {
+    class App2 extends Component {
       static template = xml`<span></span>`;
     }
     App2.env = { test: 2 };
@@ -4900,503 +3509,6 @@ describe("environment and plugins", () => {
   });
 });
 
-describe("component error handling (catchError)", () => {
-  /**
-   * This test suite requires often to wait for 3 ticks. Here is why:
-   * - First tick is to let the app render and crash.
-   * - When we crash, we call the catchError handler in a setTimeout (because we
-   *   need to wait for the previous rendering to be completely stopped). So, we
-   *   need to wait for the second tick.
-   * - Then, when the handler changes the state, we need to wait for the interface
-   *   to be rerendered.
-   *  */
-
-  test("can catch an error in a component render function", async () => {
-    const consoleError = console.error;
-    console.error = jest.fn();
-    const handler = jest.fn();
-    env.qweb.on("error", null, handler);
-    class ErrorComponent extends Component<any, any> {
-      static template = xml`<div>hey<t t-esc="props.flag and state.this.will.crash"/></div>`;
-    }
-    class ErrorBoundary extends Component<any, any> {
-      static template = xml`
-        <div>
-          <t t-if="state.error">Error handled</t>
-          <t t-else=""><t t-slot="default" /></t>
-        </div>`;
-      state = useState({ error: false });
-
-      catchError() {
-        this.state.error = true;
-      }
-    }
-    class App extends Component<any, any> {
-      static template = xml`
-        <div>
-          <ErrorBoundary><ErrorComponent flag="state.flag"/></ErrorBoundary>
-        </div>`;
-      state = useState({ flag: false });
-      static components = { ErrorBoundary, ErrorComponent };
-    }
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><div><div>heyfalse</div></div></div>");
-    app.state.flag = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><div>Error handled</div></div>");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-    expect(handler).toBeCalledTimes(1);
-  });
-
-  test("no component catching error lead to full app destruction", async () => {
-    expect.assertions(6);
-    const handler = jest.fn();
-    env.qweb.on("error", null, handler);
-    const consoleError = console.error;
-    console.error = jest.fn();
-
-    class ErrorComponent extends Component<any, any> {
-      static template = xml`<div>hey<t t-esc="props.flag and state.this.will.crash"/></div>`;
-    }
-
-    class App extends Component<any, any> {
-      static template = xml`<div><ErrorComponent flag="state.flag"/></div>`;
-      static components = { ErrorComponent };
-      state = useState({ flag: false });
-      async render() {
-        try {
-          await super.render();
-        } catch (e) {
-          expect(e.message).toBe("Cannot read property 'this' of undefined");
-        }
-      }
-    }
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><div>heyfalse</div></div>");
-    app.state.flag = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-    expect(app.__owl__.isDestroyed).toBe(true);
-    expect(handler).toBeCalledTimes(1);
-  });
-
-  test("can catch an error in the initial call of a component render function (parent mounted)", async () => {
-    const handler = jest.fn();
-    env.qweb.on("error", null, handler);
-    const consoleError = console.error;
-    console.error = jest.fn();
-    class ErrorComponent extends Component<any, any> {
-      static template = xml`<div>hey<t t-esc="state.this.will.crash"/></div>`;
-    }
-    class ErrorBoundary extends Component<any, any> {
-      static template = xml`
-        <div>
-          <t t-if="state.error">Error handled</t>
-          <t t-else=""><t t-slot="default" /></t>
-        </div>`;
-      state = useState({ error: false });
-
-      catchError() {
-        this.state.error = true;
-      }
-    }
-    class App extends Component<any, any> {
-      static template = xml`
-        <div>
-            <ErrorBoundary><ErrorComponent /></ErrorBoundary>
-        </div>`;
-      static components = { ErrorBoundary, ErrorComponent };
-    }
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><div>Error handled</div></div>");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-    expect(handler).toBeCalledTimes(1);
-  });
-
-  test("can catch an error in the initial call of a component render function (parent updated)", async () => {
-    const handler = jest.fn();
-    env.qweb.on("error", null, handler);
-    const consoleError = console.error;
-    console.error = jest.fn();
-    class ErrorComponent extends Component<any, any> {
-      static template = xml`<div>hey<t t-esc="state.this.will.crash"/></div>`;
-    }
-    class ErrorBoundary extends Component<any, any> {
-      static template = xml`
-        <div>
-          <t t-if="state.error">Error handled</t>
-          <t t-else=""><t t-slot="default" /></t>
-        </div>`;
-      state = useState({ error: false });
-
-      catchError() {
-        this.state.error = true;
-      }
-    }
-    class App extends Component<any, any> {
-      static template = xml`
-        <div>
-            <ErrorBoundary t-if="state.flag"><ErrorComponent /></ErrorBoundary>
-        </div>`;
-      state = useState({ flag: false });
-      static components = { ErrorBoundary, ErrorComponent };
-    }
-    const app = new App();
-    await app.mount(fixture);
-    app.state.flag = true;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><div>Error handled</div></div>");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-    expect(handler).toBeCalledTimes(1);
-  });
-
-  test("can catch an error in the constructor call of a component render function", async () => {
-    const handler = jest.fn();
-    env.qweb.on("error", null, handler);
-    const consoleError = console.error;
-    console.error = jest.fn();
-    env.qweb.addTemplates(`
-      <templates>
-        <div t-name="ErrorBoundary">
-            <t t-if="state.error">Error handled</t>
-            <t t-else=""><t t-slot="default" /></t>
-        </div>
-        <div t-name="ErrorComponent">Some text</div>
-        <div t-name="App">
-            <ErrorBoundary><ErrorComponent /></ErrorBoundary>
-        </div>
-      </templates>`);
-    class ErrorComponent extends Component<any, any> {
-      constructor(parent) {
-        super(parent);
-        throw new Error("NOOOOO");
-      }
-    }
-    class ErrorBoundary extends Component<any, any> {
-      state = useState({ error: false });
-
-      catchError() {
-        this.state.error = true;
-      }
-    }
-    class App extends Component<any, any> {
-      static components = { ErrorBoundary, ErrorComponent };
-    }
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><div>Error handled</div></div>");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-    expect(handler).toBeCalledTimes(1);
-  });
-
-  test("can catch an error in the willStart call", async () => {
-    const consoleError = console.error;
-    console.error = jest.fn();
-    class ErrorComponent extends Component<any, any> {
-      static template = xml`<div t-name="ErrorComponent">Some text</div>`;
-      async willStart() {
-        // we wait a little bit to be in a different stack frame
-        await nextTick();
-        throw new Error("NOOOOO");
-      }
-    }
-    class ErrorBoundary extends Component<any, any> {
-      static template = xml`
-        <div>
-          <t t-if="state.error">Error handled</t>
-          <t t-else=""><t t-slot="default" /></t>
-        </div>`;
-      state = useState({ error: false });
-
-      catchError() {
-        this.state.error = true;
-      }
-    }
-    class App extends Component<any, any> {
-      static template = xml`<div><ErrorBoundary><ErrorComponent /></ErrorBoundary></div>`;
-      static components = { ErrorBoundary, ErrorComponent };
-    }
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><div>Error handled</div></div>");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-  });
-
-  test.skip("can catch an error in the mounted call", async () => {
-    // we do not catch error in mounted anymore
-    console.error = jest.fn();
-    env.qweb.addTemplates(`
-      <templates>
-        <div t-name="ErrorBoundary">
-            <t t-if="state.error">Error handled</t>
-            <t t-else=""><t t-slot="default" /></t>
-        </div>
-        <div t-name="ErrorComponent">Some text</div>
-        <div t-name="App">
-            <ErrorBoundary><ErrorComponent /></ErrorBoundary>
-        </div>
-      </templates>`);
-    class ErrorComponent extends Component<any, any> {
-      mounted() {
-        throw new Error("NOOOOO");
-      }
-    }
-    class ErrorBoundary extends Component<any, any> {
-      state = useState({ error: false });
-
-      catchError() {
-        this.state.error = true;
-      }
-    }
-    class App extends Component<any, any> {
-      static components = { ErrorBoundary, ErrorComponent };
-    }
-    const app = new App();
-    await app.mount(fixture);
-    await nextTick();
-    await nextTick();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><div>Error handled</div></div>");
-  });
-
-  test.skip("can catch an error in the willPatch call", async () => {
-    // we do not catch error in willPatch anymore
-    const consoleError = console.error;
-    console.error = jest.fn();
-    class ErrorComponent extends Component<any, any> {
-      static template = xml`<div><t t-esc="props.message"/></div>`;
-      willPatch() {
-        throw new Error("NOOOOO");
-      }
-    }
-    class ErrorBoundary extends Component<any, any> {
-      static template = xml`
-        <div>
-          <t t-if="state.error">Error handled</t>
-          <t t-else=""><t t-slot="default" /></t>
-        </div>`;
-      state = useState({ error: false });
-
-      catchError() {
-        this.state.error = true;
-      }
-    }
-    class App extends Component<any, any> {
-      static template = xml`
-        <div>
-            <span><t t-esc="state.message"/></span>
-          <ErrorBoundary><ErrorComponent message="state.message" /></ErrorBoundary>
-        </div>`;
-      state = useState({ message: "abc" });
-      static components = { ErrorBoundary, ErrorComponent };
-    }
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>abc</span><div><div>abc</div></div></div>");
-    app.state.message = "def";
-    await nextTick();
-    await nextTick();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>def</span><div>Error handled</div></div>");
-    expect(console.error).toHaveBeenCalledTimes(1);
-    console.error = consoleError;
-  });
-
-  test("a rendering error will reject the mount promise", async () => {
-    const consoleError = console.error;
-    console.error = jest.fn(() => {});
-    // we do not catch error in willPatch anymore
-    class App extends Component<any, any> {
-      static template = xml`<div><t t-esc="this.will.crash"/></div>`;
-    }
-
-    const app = new App();
-    let error;
-    try {
-      await app.mount(fixture);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("Cannot read property 'crash' of undefined");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-  });
-
-  test("an error in mounted call will reject the mount promise", async () => {
-    const consoleError = console.error;
-    console.error = jest.fn(() => {});
-
-    class App extends Component<any, any> {
-      static template = xml`<div>abc</div>`;
-      mounted() {
-        throw new Error("boom");
-      }
-    }
-
-    const app = new App();
-    let error;
-    try {
-      await app.mount(fixture);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("boom");
-    expect(fixture.innerHTML).toBe("");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-  });
-
-  test("an error in willPatch call will reject the render promise", async () => {
-    const consoleError = console.error;
-    console.error = jest.fn(() => {});
-
-    class App extends Component<any, any> {
-      static template = xml`<div><t t-esc="val"/></div>`;
-      val = 3;
-      willPatch() {
-        throw new Error("boom");
-      }
-    }
-
-    const app = new App();
-    await app.mount(fixture);
-    app.val = 4;
-    let error;
-    try {
-      await app.render();
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("boom");
-    expect(fixture.innerHTML).toBe("");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-  });
-
-  test("an error in patched call will reject the render promise", async () => {
-    const consoleError = console.error;
-    console.error = jest.fn(() => {});
-
-    class App extends Component<any, any> {
-      static template = xml`<div><t t-esc="val"/></div>`;
-      val = 3;
-      patched() {
-        throw new Error("boom");
-      }
-    }
-
-    const app = new App();
-    await app.mount(fixture);
-    app.val = 4;
-    let error;
-    try {
-      await app.render();
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("boom");
-    expect(fixture.innerHTML).toBe("");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-  });
-
-  test("a rendering error in a sub component will reject the mount promise", async () => {
-    const consoleError = console.error;
-    console.error = jest.fn(() => {});
-    // we do not catch error in willPatch anymore
-    class Child extends Component<any, any> {
-      static template = xml`<div><t t-esc="this.will.crash"/></div>`;
-    }
-    class App extends Component<any, any> {
-      static template = xml`<div><Child/></div>`;
-      static components = { Child };
-    }
-
-    const app = new App();
-    let error;
-    try {
-      await app.mount(fixture);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("Cannot read property 'crash' of undefined");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-  });
-
-  test("a rendering error will reject the render promise", async () => {
-    const consoleError = console.error;
-    console.error = jest.fn(() => {});
-    // we do not catch error in willPatch anymore
-    class App extends Component<any, any> {
-      static template = xml`<div><t t-if="flag" t-esc="this.will.crash"/></div>`;
-      flag = false;
-    }
-
-    const app = new App();
-    await app.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div></div>");
-    app.flag = true;
-    let error;
-    try {
-      await app.render();
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("Cannot read property 'crash' of undefined");
-
-    expect(console.error).toBeCalledTimes(0);
-    console.error = consoleError;
-  });
-
-  test("a rendering error will reject the render promise (with sub components)", async () => {
-    class Child extends Component<any, any> {
-      static template = xml`<span></span>`;
-    }
-    class Parent extends Component<any, any> {
-      static template = xml`<div><Child/><t t-esc="x.y"/></div>`;
-      static components = { Child };
-    }
-
-    let error;
-    try {
-      const parent = new Parent();
-      await parent.mount(fixture);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toBe("Cannot read property 'y' of undefined");
-  });
-});
-
 describe("top level sub widgets", () => {
   test("basic use", async () => {
     env.qweb.addTemplates(`
@@ -5406,8 +3518,8 @@ describe("top level sub widgets", () => {
           </t>
           <span t-name="Child">child<t t-esc="props.p"/></span>
         </templates>`);
-    class Child extends Component<any, any> {}
-    class Parent extends Component<any, any> {
+    class Child extends Component {}
+    class Parent extends Component {
       static components = { Child };
     }
     const parent = new Parent();
@@ -5424,13 +3536,13 @@ describe("top level sub widgets", () => {
           </t>
           <span t-name="Child"><button t-on-click="inc">click</button>child<t t-esc="state.val"/></span>
         </templates>`);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       state = useState({ val: 1 });
       inc() {
         this.state.val++;
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { Child };
     }
     const parent = new Parent();
@@ -5443,13 +3555,13 @@ describe("top level sub widgets", () => {
   });
 
   test("can select a sub widget ", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span>CHILD 1</span>`;
     }
-    class OtherChild extends Component<any, any> {
+    class OtherChild extends Component {
       static template = xml`<div>CHILD 2</div>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <t>
           <t t-if="env.flag"><Child /></t>
@@ -5472,13 +3584,13 @@ describe("top level sub widgets", () => {
   });
 
   test("can select a sub widget, part 2", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span>CHILD 1</span>`;
     }
-    class OtherChild extends Component<any, any> {
+    class OtherChild extends Component {
       static template = xml`<div>CHILD 2</div>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <t>
           <t t-if="state.flag"><Child /></t>
@@ -5497,14 +3609,14 @@ describe("top level sub widgets", () => {
   });
 
   test("top level sub widget with a parent", async () => {
-    class ComponentC extends Component<any, any> {
+    class ComponentC extends Component {
       static template = xml`<span>Hello</span>`;
     }
-    class ComponentB extends Component<any, any> {
+    class ComponentB extends Component {
       static template = xml`<ComponentC />`;
       static components = { ComponentC };
     }
-    class ComponentA extends Component<any, any> {
+    class ComponentA extends Component {
       static template = xml`<div><ComponentB/></div>`;
       static components = { ComponentB };
     }
@@ -5516,294 +3628,9 @@ describe("top level sub widgets", () => {
   });
 });
 
-describe("unmounting and remounting", () => {
-  test("widget can be unmounted and remounted", async () => {
-    const steps: string[] = [];
-    class MyWidget extends Component<any, any> {
-      static template = xml`<div>Hey</div>`;
-      async willStart() {
-        steps.push("willstart");
-      }
-      mounted() {
-        steps.push("mounted");
-      }
-      willUnmount() {
-        steps.push("willunmount");
-      }
-      patched() {
-        throw new Error("patched should not be called");
-      }
-    }
-
-    const w = new MyWidget();
-    await w.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>Hey</div>");
-    expect(steps).toEqual(["willstart", "mounted"]);
-
-    w.unmount();
-    expect(fixture.innerHTML).toBe("");
-    expect(steps).toEqual(["willstart", "mounted", "willunmount"]);
-
-    await w.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>Hey</div>");
-    expect(steps).toEqual(["willstart", "mounted", "willunmount", "mounted"]);
-  });
-
-  test("widget can be mounted twice without ill effect", async () => {
-    const steps: string[] = [];
-    class MyWidget extends Component<any, any> {
-      static template = xml`<div>Hey</div>`;
-      async willStart() {
-        steps.push("willstart");
-      }
-      mounted() {
-        steps.push("mounted");
-      }
-      willUnmount() {
-        steps.push("willunmount");
-      }
-    }
-
-    const w = new MyWidget();
-    await w.mount(fixture);
-    await w.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>Hey</div>");
-    expect(steps).toEqual(["willstart", "mounted"]);
-  });
-
-  test("state changes in willUnmount do not trigger rerender", async () => {
-    const steps: string[] = [];
-
-    class Child extends Component<any, any> {
-      static template = xml`
-        <span><t t-esc="props.val"/><t t-esc="state.n"/></span>
-      `;
-      state = useState({ n: 2 });
-      __render(f) {
-        steps.push("render");
-        return super.__render(f);
-      }
-      willPatch() {
-        steps.push("willPatch");
-      }
-      patched() {
-        steps.push("patched");
-      }
-
-      willUnmount() {
-        steps.push("willUnmount");
-        this.state.n = 3;
-      }
-    }
-    class Parent extends Component<any, any> {
-      static template = xml`
-        <div>
-          <Child t-if="state.flag" val="state.val"/>
-        </div>
-      `;
-      static components = { Child };
-      state = useState({ val: 1, flag: true });
-    }
-
-    const widget = new Parent();
-    await widget.mount(fixture);
-    expect(steps).toEqual(["render"]);
-    expect(fixture.innerHTML).toBe("<div><span>12</span></div>");
-    widget.state.flag = false;
-    await nextTick();
-    // we make sure here that no call to __render is done
-    expect(steps).toEqual(["render", "willUnmount"]);
-  });
-
-  test("state changes in willUnmount will be applied on remount", async () => {
-    class TestWidget extends Component<any, any> {
-      static template = xml`
-        <div><t t-esc="state.val"/></div>
-      `;
-      state = useState({ val: 1 });
-      willUnmount() {
-        this.state.val = 3;
-      }
-    }
-
-    const widget = new TestWidget();
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>1</div>");
-    widget.unmount();
-    expect(fixture.innerHTML).toBe("");
-    await nextTick(); // wait for changes to be detected before remounting
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>3</div>");
-    // we want to make sure that there are no remaining tasks left at this point.
-    expect(Component.scheduler.tasks.length).toBe(0);
-  });
-
-  test("sub component is still active after being unmounted and remounted", async () => {
-    class Child extends Component<any, any> {
-      static template = xml`
-        <p t-on-click="state.value++">
-          <t t-esc="state.value"/>
-        </p>`;
-
-      state = useState({ value: 1 });
-    }
-
-    class Parent extends Component<any, any> {
-      static components = { Child };
-      static template = xml`<div><Child/></div>`;
-    }
-
-    const w = new Parent();
-    await w.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><p>1</p></div>");
-
-    fixture.querySelector("p")!.click();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>2</p></div>");
-    w.unmount();
-    await nextTick();
-    await w.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><p>2</p></div>");
-    fixture.querySelector("p")!.click();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><p>3</p></div>");
-  });
-
-  test("change state just before mounting component", async () => {
-    const steps: number[] = [];
-    class TestWidget extends Component<any, any> {
-      static template = xml`
-        <div><t t-esc="state.val"/></div>
-      `;
-      state = useState({ val: 1 });
-      __render(f) {
-        steps.push(this.state.val);
-        return super.__render(f);
-      }
-    }
-    TestWidget.prototype.__render = jest.fn(TestWidget.prototype.__render);
-
-    const widget = new TestWidget();
-    widget.state.val = 2;
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>2</div>");
-    expect(TestWidget.prototype.__render).toHaveBeenCalledTimes(1);
-
-    // unmount and re-mount, as in this case, willStart won't be called, so it's
-    // slightly different
-    widget.unmount();
-    widget.state.val = 3;
-    await widget.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>3</div>");
-    expect(TestWidget.prototype.__render).toHaveBeenCalledTimes(2);
-    expect(steps).toEqual([2, 3]);
-  });
-
-  test("change state while mounting component", async () => {
-    const steps: number[] = [];
-    class TestWidget extends Component<any, any> {
-      static template = xml`
-        <div><t t-esc="state.val"/></div>
-      `;
-      state = useState({ val: 1 });
-      __render(f) {
-        steps.push(this.state.val);
-        return super.__render(f);
-      }
-    }
-    TestWidget.prototype.__render = jest.fn(TestWidget.prototype.__render);
-    TestWidget.prototype.__patch = jest.fn(TestWidget.prototype.__patch);
-
-    const widget = new TestWidget();
-    let prom = widget.mount(fixture);
-    widget.state.val = 2;
-    await prom;
-    expect(fixture.innerHTML).toBe("<div>2</div>");
-    expect(TestWidget.prototype.__render).toHaveBeenCalledTimes(1);
-
-    // unmount and re-mount, as in this case, willStart won't be called, so it's
-    // slightly different
-    widget.unmount();
-    prom = widget.mount(fixture);
-    widget.state.val = 3;
-    await prom;
-    expect(fixture.innerHTML).toBe("<div>3</div>");
-    expect(TestWidget.prototype.__render).toHaveBeenCalledTimes(3);
-    expect(TestWidget.prototype.__patch).toHaveBeenCalledTimes(2);
-    expect(steps).toEqual([2, 2, 3]);
-  });
-
-  test("change state while component is unmounted", async () => {
-    let child;
-    class Child extends Component<any, any> {
-      static template = xml`<span t-esc="state.val"/>`;
-      state = useState({
-        val: "C1"
-      });
-      constructor(parent, props) {
-        super(parent, props);
-        child = this;
-      }
-    }
-
-    class Parent extends Component<any, any> {
-      static components = { Child };
-      static template = xml`<div><t t-esc="state.val"/><Child/></div>`;
-      state = useState({ val: "P1" });
-    }
-
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>P1<span>C1</span></div>");
-
-    parent.unmount();
-    expect(fixture.innerHTML).toBe("");
-
-    parent.state.val = "P2";
-    child.state.val = "C2";
-
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div>P2<span>C2</span></div>");
-  });
-
-  test("unmount component during a re-rendering", async () => {
-    const def = makeDeferred();
-    class Child extends Component<any, any> {
-      static template = xml`<span><t t-esc="props.val"/></span>`;
-      willUpdateProps() {
-        return def;
-      }
-    }
-    Child.prototype.__render = jest.fn(Child.prototype.__render);
-
-    class Parent extends Component<any, any> {
-      static template = xml`<div><Child val="state.val"/></div>`;
-      static components = { Child };
-      state = useState({ val: 1 });
-    }
-
-    const parent = new Parent();
-    await parent.mount(fixture);
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-    expect(Child.prototype.__render).toBeCalledTimes(1);
-
-    parent.state.val = 2;
-    await nextTick();
-    expect(fixture.innerHTML).toBe("<div><span>1</span></div>");
-
-    parent.unmount();
-    expect(fixture.innerHTML).toBe("");
-
-    def.resolve();
-    await nextTick();
-    expect(fixture.innerHTML).toBe("");
-    expect(Child.prototype.__render).toBeCalledTimes(1);
-  });
-});
-
 describe("dynamic root nodes", () => {
   test("template with t-if, part 1", async () => {
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       static template = xml`
         <t>
           <t t-if="true"><span>hey</span></t>
@@ -5819,7 +3646,7 @@ describe("dynamic root nodes", () => {
   });
 
   test("template with t-if, part 2", async () => {
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       static template = xml`
         <t>
           <t t-if="false"><span>hey</span></t>
@@ -5835,7 +3662,7 @@ describe("dynamic root nodes", () => {
   });
 
   test("switching between sub branches dynamically", async () => {
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       static template = xml`
         <t>
           <t t-if="state.flag"><span>hey</span></t>
@@ -5856,13 +3683,13 @@ describe("dynamic root nodes", () => {
   });
 
   test("switching between sub components dynamically", async () => {
-    class ChildA extends Component<any, any> {
+    class ChildA extends Component {
       static template = xml`<span>hey</span>`;
     }
-    class ChildB extends Component<any, any> {
+    class ChildB extends Component {
       static template = xml`<div>abc</div>`;
     }
-    class TestWidget extends Component<any, any> {
+    class TestWidget extends Component {
       static template = xml`
         <t>
             <t t-if="state.flag"><ChildA/></t>
@@ -5888,7 +3715,7 @@ describe("dynamic t-props", () => {
   test("basic use", async () => {
     expect.assertions(4);
 
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`
         <span>
             <t t-esc="props.a + props.b"/>
@@ -5900,7 +3727,7 @@ describe("dynamic t-props", () => {
         expect(props).not.toBe(widget.some.obj);
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
             <Child t-props="some.obj"/>
@@ -5921,14 +3748,14 @@ describe("dynamic t-props", () => {
 
 describe("support svg components", () => {
   test("add proper namespace to svg", async () => {
-    class GComp extends Component<any, any> {
+    class GComp extends Component {
       static template = xml`
         <g>
             <circle cx="50" cy="50" r="4" stroke="green" stroke-width="1" fill="yellow"/>
         </g>`;
     }
 
-    class Svg extends Component<any, any> {
+    class Svg extends Component {
       static template = xml`
         <svg>
             <GComp/>
@@ -5946,7 +3773,7 @@ describe("support svg components", () => {
 
 describe("t-raw in components", () => {
   test("update properly on state changes", async () => {
-    class TestW extends Component<any, any> {
+    class TestW extends Component {
       static template = xml`<div><t t-raw="state.value"/></div>`;
       state = useState({ value: "<b>content</b>" });
     }
@@ -5961,7 +3788,7 @@ describe("t-raw in components", () => {
   });
 
   test("can render list of t-raw ", async () => {
-    class TestW extends Component<any, any> {
+    class TestW extends Component {
       static template = xml`
         <div>
             <t t-foreach="state.items" t-as="item">
@@ -5984,7 +3811,7 @@ describe("t-call", () => {
   test("handlers are properly bound through a t-call", async () => {
     expect.assertions(3);
     env.qweb.addTemplate("sub", `<p t-on-click="update">lucas</p>`);
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><t t-call="sub"/></div>`;
       update() {
         expect(this).toBe(parent);
@@ -6001,14 +3828,14 @@ describe("t-call", () => {
   test("parent is set within t-call", async () => {
     env.qweb.addTemplate("sub", `<Child/>`);
     let child;
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span>lucas</span>`;
       constructor() {
         super(...arguments);
         child = this;
       }
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { Child };
       static template = xml`<div><t t-call="sub"/></div>`;
     }
@@ -6022,10 +3849,10 @@ describe("t-call", () => {
 
   test("t-call in t-foreach and children component", async () => {
     env.qweb.addTemplate("sub", `<Child val="val"/>`);
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span><t t-esc="props.val"/></span>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { Child };
       static template = xml`
         <div>
@@ -6043,14 +3870,14 @@ describe("t-call", () => {
   test("parent is set within t-call with no parentNode", async () => {
     env.qweb.addTemplate("sub", `<Child/>`);
     let child;
-    class Child extends Component<any, any> {
+    class Child extends Component {
       constructor() {
         super(...arguments);
         child = this;
       }
       static template = xml`<span>lucas</span>`;
     }
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static components = { Child };
       static template = xml`<t t-call="sub"/>`;
     }
@@ -6065,7 +3892,7 @@ describe("t-call", () => {
   test("handlers with arguments are properly bound through a t-call", async () => {
     expect.assertions(3);
     env.qweb.addTemplate("sub", `<p t-on-click="update(a)">lucas</p>`);
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`<div><t t-call="sub"/></div>`;
       update(a) {
         expect(this).toBe(parent);
@@ -6081,12 +3908,12 @@ describe("t-call", () => {
   });
 
   test("sub components in two t-calls", async () => {
-    class Child extends Component<any, any> {
+    class Child extends Component {
       static template = xml`<span><t t-esc="props.val"/></span>`;
     }
 
     env.qweb.addTemplate("sub", `<Child val="state.val"/>`);
-    class Parent extends Component<any, any> {
+    class Parent extends Component {
       static template = xml`
         <div>
           <t t-if="state.val===1">

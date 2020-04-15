@@ -23,6 +23,26 @@ QWeb.utils.defineProxy = function defineProxy(target, source) {
   }
 };
 
+QWeb.utils.assignHooks = function assignHooks(dataObj, hooks) {
+  if ("hook" in dataObj) {
+    const hookObject = dataObj.hook;
+    for (let name in hooks) {
+      const current = hookObject[name];
+      const fn = hooks[name];
+      if (current) {
+        hookObject[name] = (...args) => {
+          current(...args);
+          fn(...args);
+        };
+      } else {
+        hookObject[name] = fn;
+      }
+    }
+  } else {
+    dataObj.hook = hooks;
+  }
+};
+
 /**
  * The t-component directive is certainly a complicated and hard to maintain piece
  * of code.  To help you, fellow developer, if you have to maintain it, I offer
@@ -279,6 +299,8 @@ QWeb.addDirective({
       }
       let eventsCode = events
         .map(function([name, value]) {
+          const capture = name.match(/\.capture/);
+          name = capture ? name.replace(/\.capture/, "") : name;
           const { event, handler } = makeHandlerCode(
             ctx,
             name,
@@ -286,12 +308,15 @@ QWeb.addDirective({
             false,
             T_COMPONENT_MODS_CODE
           );
+          if (capture) {
+            return `vn.elm.addEventListener('${event}', ${handler}, true);`;
+          }
           return `vn.elm.addEventListener('${event}', ${handler});`;
         })
         .join("");
       const styleExpr = tattStyle || (styleAttr ? `'${styleAttr}'` : false);
       const styleCode = styleExpr ? `vn.elm.style = ${styleExpr};` : "";
-      createHook = `vnode.data.hook = {create(_, vn){${styleCode}${eventsCode}}};`;
+      createHook = `utils.assignHooks(vnode.data, {create(_, vn){${styleCode}${eventsCode}}});`;
     }
 
     ctx.addLine(
@@ -368,22 +393,43 @@ QWeb.addDirective({
     if (transition) {
       ctx.addLine(`const __patch${componentID} = w${componentID}.__patch;`);
       ctx.addLine(
-        `w${componentID}.__patch = fiber => {__patch${componentID}.call(w${componentID}, fiber); if(!w${componentID}.__owl__.transitionInserted){w${componentID}.__owl__.transitionInserted = true;utils.transitionInsert(w${componentID}.__owl__.vnode, '${transition}');}};`
+        `w${componentID}.__patch = (t, vn) => {__patch${componentID}.call(w${componentID}, t, vn); if(!w${componentID}.__owl__.transitionInserted){w${componentID}.__owl__.transitionInserted = true;utils.transitionInsert(w${componentID}.__owl__.vnode, '${transition}');}};`
       );
     }
     ctx.addLine(`parent.__owl__.cmap[${templateKey}] = w${componentID}.__owl__.id;`);
 
     if (hasSlots) {
       const clone = <Element>node.cloneNode(true);
-      const slotNodes = clone.querySelectorAll("[t-set]");
+      const slotNodes = Array.from(clone.querySelectorAll("[t-set-slot]"));
+
+      // The next code is a fallback for compatibility reason. It accepts t-set
+      // elements that are direct children with a non empty body as nodes defining
+      // the content of a slot.
+      //
+      // This is wrong, but is necessary to prevent breaking all existing Owl
+      // code using slots. This will be removed in v2.0 someday. Meanwhile,
+      // please use t-set-slot everywhere you need to set the content of a
+      // slot.
+      for (let el of clone.children) {
+        if (el.getAttribute("t-set") && el.hasChildNodes()) {
+          slotNodes.push(el);
+        }
+      }
       const slotId = QWeb.nextSlotId++;
       ctx.addLine(`w${componentID}.__owl__.slotId = ${slotId};`);
       if (slotNodes.length) {
         for (let i = 0, length = slotNodes.length; i < length; i++) {
           const slotNode = slotNodes[i];
           slotNode.parentElement!.removeChild(slotNode);
-          const key = slotNode.getAttribute("t-set")!;
-          slotNode.removeAttribute("t-set");
+          let key = slotNode.getAttribute("t-set-slot")!;
+          slotNode.removeAttribute("t-set-slot");
+
+          // here again, this code should be removed when we stop supporting
+          // using t-set to define the content of named slots.
+          if (!key) {
+            key = slotNode.getAttribute("t-set")!;
+            slotNode.removeAttribute("t-set");
+          }
           const slotFn = qweb._compile(`slot_${key}_template`, slotNode, ctx);
           QWeb.slots[`${slotId}_${key}`] = slotFn;
         }

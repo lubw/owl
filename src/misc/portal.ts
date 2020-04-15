@@ -18,7 +18,11 @@ import { useSubEnv } from "../hooks";
  * are re-triggered on an empty <portal> node located in the parent's DOM.
  */
 
-export class Portal extends Component<any, any> {
+interface Props {
+  target: string;
+}
+
+export class Portal extends Component<Props> {
   static template = xml`<portal><t t-slot="default"/></portal>`;
   static props = {
     target: {
@@ -43,7 +47,7 @@ export class Portal extends Component<any, any> {
   // represents the element that is moved somewhere else
   portal: VNode | null = null;
   // the target where we will move `portal`
-  target: HTMLElement | null = null;
+  target: Element | null = null;
 
   constructor(parent, props) {
     super(parent, props);
@@ -120,7 +124,7 @@ export class Portal extends Component<any, any> {
    *
    * @override
    */
-  __patch(vnode) {
+  __patch(target, vnode) {
     if (this.doTargetLookUp) {
       const target = document.querySelector(this.props.target);
       if (!target) {
@@ -149,7 +153,7 @@ export class Portal extends Component<any, any> {
     this.portal = patch(portalPatch, vnode.children![0] as VNode);
     vnode.children = [];
 
-    super.__patch(vnode);
+    super.__patch(target, vnode);
 
     if (shouldDeploy) {
       this.__deployPortal();
@@ -158,7 +162,7 @@ export class Portal extends Component<any, any> {
   /**
    * Override to set the env
    */
-  __trigger(component: Component<any, any>, eventType: string, payload?: any) {
+  __trigger(component: Component, eventType: string, payload?: any) {
     const env = this.env;
     this.env = this.parentEnv;
     super.__trigger(component, eventType, payload);

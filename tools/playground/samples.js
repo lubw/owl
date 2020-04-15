@@ -1169,7 +1169,7 @@ const RESPONSIVE_CSS = `body {
 const SLOTS = `// We show here how slots can be used to create generic components.
 // In this example, the Card component is basically only a container. It is not
 // aware of its content. It just knows where it should be (with t-slot).
-// The parent component define the content with t-set.
+// The parent component define the content with t-set-slot.
 //
 // Note that the t-on-click event, defined in the App template, is executed in
 // the context of the App component, even though it is inside the Card component
@@ -1235,15 +1235,15 @@ const SLOTS_XML = `<templates>
 
   <div t-name="App" class="main">
     <Card title="'Title card A'">
-      <t t-set="content">Content of card 1...  [<t t-esc="state.a"/>]</t>
-      <t t-set="footer"><button t-on-click="inc('a', 1)">Increment A</button></t>
+      <t t-set-slot="content">Content of card 1...  [<t t-esc="state.a"/>]</t>
+      <t t-set-slot="footer"><button t-on-click="inc('a', 1)">Increment A</button></t>
     </Card>
     <Card title="'Title card B'">
-      <t t-set="content">
+      <t t-set-slot="content">
         <div>Card 2... [<t t-esc="state.b"/>]</div>
         <Counter />
       </t>
-      <t t-set="footer"><button t-on-click="inc('b', -1)">Decrement B</button></t>
+      <t t-set-slot="footer"><button t-on-click="inc('b', -1)">Decrement B</button></t>
     </Card>
   </div>
 </templates>`;
@@ -1811,6 +1811,49 @@ const WMS_CSS = `body {
     font-size: 20px;
 }`;
 
+const SFC = `// This example illustrates how Owl enables single file components,
+// which include code, template and style.
+//
+// This is very useful in some situations, such as testing or quick prototyping.
+// Note that this example has no external xml or css file, everything is
+// contained in a single js file.
+
+const { Component, useState, tags } = owl;
+const { xml, css } = tags;
+
+// Counter component
+const COUNTER_TEMPLATE = xml\`
+  <button t-on-click="state.value++">
+    Click! [<t t-esc="state.value"/>]
+  </button>\`;
+
+const COUNTER_STYLE = css\`
+  button {
+    color: blue;
+  }\`;
+
+class Counter extends Component {
+  state = useState({ value: 0})
+}
+Counter.template = COUNTER_TEMPLATE;
+Counter.style = COUNTER_STYLE;
+
+// App
+const APP_TEMPLATE = xml\`
+  <div>
+    <Counter/>
+    <Counter/>
+  </div>\`;
+
+class App extends Component {}
+App.template = APP_TEMPLATE;
+App.components = { Counter };
+
+// Application setup
+const app = new App();
+app.mount(document.body);
+`;
+
 export const SAMPLES = [
   {
     description: "Components",
@@ -1822,6 +1865,10 @@ export const SAMPLES = [
     description: "Form Input Bindings",
     code: FORM,
     xml: FORM_XML
+  },
+  {
+    description: "Single File Components",
+    code: SFC
   },
   {
     description: "Animations",

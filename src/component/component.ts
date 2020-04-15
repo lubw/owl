@@ -37,8 +37,10 @@ export interface Env {
   [key: string]: any;
 }
 
+export type MountPosition = "first-child" | "last-child" | "self";
+
 interface MountOptions {
-  position?: "first-child" | "last-child" | "self";
+  position?: MountPosition;
 }
 
 /**
@@ -46,7 +48,7 @@ interface MountOptions {
  * useful to typecheck and describe the internal keys used by Owl to manage the
  * component tree.
  */
-interface Internal<T extends Env, Props> {
+interface Internal<T extends Env> {
   // each component has a unique id, useful mostly to handle parent/child
   // relationships
   readonly id: number;
@@ -58,8 +60,8 @@ interface Internal<T extends Env, Props> {
 
   // parent and children keys are obviously useful to setup the parent-children
   // relationship.
-  parent: Component<T, any> | null;
-  children: { [key: number]: Component<T, any> };
+  parent: Component<any, T> | null;
+  children: { [key: number]: Component<any, T> };
   // children mapping: from templateID to componentID. templateID identifies a
   // place in a template. The t-component directive needs it to be able to get
   // the component instance back whenever the template is rerendered.
@@ -85,7 +87,7 @@ interface Internal<T extends Env, Props> {
   willStartCB: Function | null;
   willUpdatePropsCB: Function | null;
   classObj: { [key: string]: boolean } | null;
-  refs: { [key: string]: Component<T, any> | HTMLElement | undefined } | null;
+  refs: { [key: string]: Component<any, T> | HTMLElement | undefined } | null;
 }
 
 export const portalSymbol = Symbol("portal"); // FIXME
@@ -95,18 +97,17 @@ export const portalSymbol = Symbol("portal"); // FIXME
 //------------------------------------------------------------------------------
 let nextId = 1;
 
-export class Component<T extends Env, Props extends {}> {
-  readonly __owl__: Internal<Env, Props>;
+export class Component<Props extends {} = any, T extends Env = Env> {
+  readonly __owl__: Internal<T>;
   static template?: string | null = null;
   static _template?: string | null = null;
-  static current: Component<any, any> | null = null;
+  static current: Component | null = null;
   static components = {};
   static props?: any;
   static defaultProps?: any;
   static env: any = {};
   // expose scheduler s.t. it can be mocked for testing purposes
   static scheduler: Scheduler = scheduler;
-  __target: HTMLElement | undefined;
 
   /**
    * The `el` is the root element of the component.  Note that it could be null:
@@ -130,7 +131,7 @@ export class Component<T extends Env, Props extends {}> {
    * hand.  Other components should be created automatically by the framework (with
    * the t-component directive in a template)
    */
-  constructor(parent?: Component<T, any> | null, props?: Props) {
+  constructor(parent?: Component<any, T> | null, props?: Props) {
     Component.current = this;
 
     let constr = this.constructor as any;
@@ -302,23 +303,29 @@ export class Component<T extends Env, Props extends {}> {
     const position = options.position || "last-child";
     const __owl__ = this.__owl__;
     if (__owl__.isMounted) {
-      return Promise.resolve();
+      if (position !== "self" && this.el!.parentNode !== target) {
+        // in this situation, we are trying to mount a component on a different
+        // target. In this case, we need to unmount first, otherwise it will
+        // not work.
+        this.unmount();
+      } else {
+        return Promise.resolve();
+      }
+    }
+    if (__owl__.currentFiber) {
+      const currentFiber = __owl__.currentFiber;
+      if (currentFiber.target === target && currentFiber.position === position) {
+        return scheduler.addFiber(currentFiber);
+      } else {
+        scheduler.rejectFiber(currentFiber, "Mounting operation cancelled");
+      }
     }
     if (!(target instanceof HTMLElement || target instanceof DocumentFragment)) {
       let message = `Component '${this.constructor.name}' cannot be mounted: the target is not a valid DOM node.`;
       message += `\nMaybe the DOM is not ready yet? (in that case, you can use owl.utils.whenReady)`;
       throw new Error(message);
     }
-    let inserter =
-      position === "last-child"
-        ? el => target.appendChild(el)
-        : position === "first-child"
-        ? el => target.prepend(el)
-        : el => {};
-    if (position === "self") {
-      this.__target = target as HTMLElement;
-    }
-    const fiber = new Fiber(null, this, false, inserter);
+    const fiber = new Fiber(null, this, false, target, position);
     fiber.shouldPatch = false;
     if (!__owl__.vnode) {
       this.__prepareAndRender(fiber, () => {});
@@ -350,22 +357,26 @@ export class Component<T extends Env, Props extends {}> {
    */
   async render(force: boolean = false): Promise<void> {
     const __owl__ = this.__owl__;
-    if (!__owl__.isMounted && !__owl__.currentFiber) {
+    const currentFiber = __owl__.currentFiber;
+    if (!__owl__.isMounted && !currentFiber) {
       // if we get here, this means that the component was either never mounted,
       // or was unmounted and some state change  triggered a render. Either way,
       // we do not want to actually render anything in this case.
       return;
     }
-    if (__owl__.currentFiber && !__owl__.currentFiber.isRendered) {
-      return scheduler.addFiber(__owl__.currentFiber.root);
+    if (currentFiber && !currentFiber.isRendered && !currentFiber.isCompleted) {
+      return scheduler.addFiber(currentFiber.root);
     }
     // if we aren't mounted at this point, it implies that there is a
     // currentFiber that is already rendered (isRendered is true), so we are
     // about to be mounted
     const isMounted = __owl__.isMounted;
-    const fiber = new Fiber(null, this, force, null);
+    const fiber = new Fiber(null, this, force, null, null);
     Promise.resolve().then(() => {
       if (__owl__.isMounted || !isMounted) {
+        if (fiber.isCompleted) {
+          return;
+        }
         // we are mounted (__owl__.isMounted), or if we are currently being
         // mounted (!isMounted), so we call __render
         this.__render(fiber);
@@ -434,7 +445,7 @@ export class Component<T extends Env, Props extends {}> {
    * Note that it does not call the __callWillUnmount method to avoid visiting
    * all children many times.
    */
-  __destroy(parent: Component<any, any> | null) {
+  __destroy(parent: Component | null) {
     const __owl__ = this.__owl__;
     const isMounted = __owl__.isMounted;
     if (isMounted) {
@@ -494,7 +505,7 @@ export class Component<T extends Env, Props extends {}> {
    * Private trigger method, allows to choose the component which triggered
    * the event in the first place
    */
-  __trigger(component: Component<any, any>, eventType: string, payload?: any) {
+  __trigger(component: Component, eventType: string, payload?: any) {
     if (this.el) {
       const ev = new OwlEvent(component, eventType, {
         bubbles: true,
@@ -517,7 +528,7 @@ export class Component<T extends Env, Props extends {}> {
     const shouldUpdate = parentFiber.force || this.shouldUpdate(nextProps);
     if (shouldUpdate) {
       const __owl__ = this.__owl__;
-      const fiber = new Fiber(parentFiber, this, parentFiber.force, null);
+      const fiber = new Fiber(parentFiber, this, parentFiber.force, null, null);
       if (!parentFiber.child) {
         parentFiber.child = fiber;
       } else {
@@ -549,20 +560,8 @@ export class Component<T extends Env, Props extends {}> {
    * Main patching method. We call the virtual dom patch method here to convert
    * a virtual dom vnode into some actual dom.
    */
-  __patch(vnode: VNode) {
-    const __owl__ = this.__owl__;
-    if (this.__target) {
-      if (this.__target.tagName.toLowerCase() !== vnode.sel) {
-        throw new Error(
-          `Cannot attach '${this.constructor.name}' to target node (not same tag name)`
-        );
-      }
-      __owl__.vnode = patch(this.__target, vnode);
-      delete this.__target;
-    } else {
-      const target = __owl__.vnode || document.createElement(vnode.sel!);
-      __owl__.vnode = patch(target, vnode);
-    }
+  __patch(target: HTMLElement | VNode | DocumentFragment, vnode: VNode) {
+    this.__owl__.vnode = patch(target as any, vnode);
   }
 
   /**
@@ -572,7 +571,7 @@ export class Component<T extends Env, Props extends {}> {
    */
   __prepare(parentFiber: Fiber, scope: any, cb: CallableFunction): Fiber {
     this.__owl__.scope = scope;
-    const fiber = new Fiber(parentFiber, this, parentFiber.force, null);
+    const fiber = new Fiber(parentFiber, this, parentFiber.force, null, null);
     fiber.shouldPatch = false;
     if (!parentFiber.child) {
       parentFiber.child = fiber;
@@ -605,9 +604,10 @@ export class Component<T extends Env, Props extends {}> {
       // key. So we fall back on looking for a template matching its name (or
       // one of its subclass).
 
-      let template: string;
-      while ((template = p.name) && !(template in qweb.templates) && p !== Component) {
+      let template: string = p.name;
+      while (!(template in qweb.templates) && p !== Component) {
         p = p.__proto__;
+        template = p.name;
       }
       if (p === Component) {
         throw new Error(`Could not find template for component "${this.constructor.name}"`);
